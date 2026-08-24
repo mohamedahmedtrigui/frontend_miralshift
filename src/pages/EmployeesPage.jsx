@@ -16,7 +16,7 @@ const EmployeesPage = () => {
   const canUpdate = can(currentUser, 'users', 'update');
   const canDelete = can(currentUser, 'users', 'delete');
   const {
-    users, roles, companies, agencies, zones, shifts, loading,
+    users, roles, companies, agencies, zones, shifts, loading, error, refetch,
     createUser, updateUser, deleteUser,
   } = useEmployees();
   const [searchQuery, setSearchQuery] = useState('');
@@ -133,19 +133,23 @@ const EmployeesPage = () => {
   const roleLimitsZones = selectedRole?.access_level === 'restricted' && selectedRole.allowed_zones?.length > 0;
   const roleLimitsAgency = selectedRole?.access_level === 'restricted' && selectedRole.allowed_agencies?.length > 0;
 
+  // These read-only displays always reflect the employee's actual stored
+  // values (formData), not the role's — the role only DRIVES formData (via
+  // handleRoleChange, on picking/switching a role). Deriving straight from
+  // the role instead would show the wrong thing whenever editing an existing
+  // employee whose company/agency/zones no longer match a role that was
+  // edited after they were assigned.
   const selectedCompany = useMemo(() => {
     return companies.find(c => c.id.toString() === formData.company_id?.toString());
   }, [companies, formData.company_id]);
 
   const matchingAgency = useMemo(() => {
-    if (!roleLimitsAgency) return null;
-    return agencies.find(a => a.id.toString() === selectedRole.allowed_agencies[0]) || null;
-  }, [agencies, roleLimitsAgency, selectedRole]);
+    return agencies.find(a => a.id.toString() === formData.agency_id?.toString()) || null;
+  }, [agencies, formData.agency_id]);
 
   const roleZones = useMemo(() => {
-    if (!roleLimitsZones) return [];
-    return zones.filter(z => selectedRole.allowed_zones.includes(z.name));
-  }, [zones, roleLimitsZones, selectedRole]);
+    return zones.filter(z => (formData.dispatch_zones || []).includes(z.name));
+  }, [zones, formData.dispatch_zones]);
 
   // Picking a restricted role adopts its company/zones/agency directly
   // instead of just narrowing choices — there's nothing left for the admin
@@ -236,6 +240,11 @@ const EmployeesPage = () => {
       <div className="table-container glass">
         {loading ? (
           <div className="loading-state">Chargement...</div>
+        ) : error ? (
+          <div className="error-state">
+            <span>Échec du chargement des employés.</span>
+            <button type="button" className="btn-secondary" onClick={refetch}>Réessayer</button>
+          </div>
         ) : (
           <table className="data-table">
             <thead>
@@ -450,12 +459,17 @@ const EmployeesPage = () => {
               <option value="">
                 {(!formData.company_id || !formData.agency_id)
                   ? 'Sélectionnez une compagnie et une agence d\'abord'
-                  : 'Aucun shift'}
+                  : availableShifts.length === 0
+                    ? 'Aucun shift configuré pour cette compagnie/agence'
+                    : 'Aucun shift'}
               </option>
               {availableShifts.map(s => (
                 <option key={s.id} value={s.id}>{s.name} ({s.start_time} - {s.end_time})</option>
               ))}
             </select>
+            {roleLimitsCompanies && roleLimitsAgency && availableShifts.length === 0 && (
+              <span className="subtext">Configurez un shift pour cette compagnie/agence dans "Shifts" pour pouvoir en assigner un ici.</span>
+            )}
           </div>
 
           {showAuthFields && (

@@ -64,13 +64,19 @@ function App() {
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </Suspense>
+        ) : !user ? (
+          // A valid token flips isAuthenticated immediately, but the
+          // role-bearing profile only arrives once fetchUser() resolves.
+          // Hold off on the whole authenticated shell (Sidebar included) —
+          // rendering Sidebar early made it briefly show with no nav items,
+          // since canAccessInterface(null, ...) fails closed.
+          <RouteFallback />
         ) : (
           <div className="app-container">
             <Sidebar />
             <main className="main-content">
               <div className="content-area">
                 <Suspense fallback={<RouteFallback />}>
-                  {!user ? <RouteFallback /> : (
                   <Routes>
                     <Route path="/" element={<Navigate to={getDefaultRoute(user)} replace />} />
                     <Route path="/calendar" element={
@@ -84,7 +90,6 @@ function App() {
                     <Route path="/shifts" element={<ProtectedRoute interfaceKey="shifts"><ShiftsPage /></ProtectedRoute>} />
                     <Route path="*" element={<Navigate to={getDefaultRoute(user)} replace />} />
                   </Routes>
-                  )}
                 </Suspense>
               </div>
             </main>

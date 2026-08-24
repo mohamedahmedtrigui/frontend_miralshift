@@ -14,7 +14,7 @@ const CompaniesPage = () => {
   const canCreate = can(user, 'companies', 'create');
   const canUpdate = can(user, 'companies', 'update');
   const canDelete = can(user, 'companies', 'delete');
-  const { companies, loading, createCompany, updateCompany, deleteCompany } = useCompanies();
+  const { companies, loading, error, refetch, createCompany, updateCompany, deleteCompany } = useCompanies();
   const { addToast } = useToast();
 
   // Modal State
@@ -111,6 +111,11 @@ const CompaniesPage = () => {
       <div className="table-container glass">
         {loading ? (
           <div className="loading-state">Chargement...</div>
+        ) : error ? (
+          <div className="error-state">
+            <span>Échec du chargement des compagnies.</span>
+            <button type="button" className="btn-secondary" onClick={refetch}>Réessayer</button>
+          </div>
         ) : (
           <table className="data-table">
             <thead>

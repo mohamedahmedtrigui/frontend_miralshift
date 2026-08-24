@@ -5,14 +5,19 @@ import { useReferenceStore } from '../store/referenceStore';
 export function useCompanies() {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { setCompanies: cacheCompanies } = useReferenceStore();
 
   const refetch = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await companyService.getAll();
       setCompanies(data);
       cacheCompanies(data);
+    } catch (err) {
+      console.error('Failed to fetch companies', err);
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -38,6 +43,7 @@ export function useCompanies() {
   return {
     companies,
     loading,
+    error,
     refetch,
     createCompany,
     updateCompany,

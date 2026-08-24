@@ -30,7 +30,7 @@ const RolesPage = () => {
   const canCreate = can(user, 'roles', 'create');
   const canUpdate = can(user, 'roles', 'update');
   const canDelete = can(user, 'roles', 'delete');
-  const { roles, companies, zones, agencies, loading, createRole, updateRole, deleteRole } = useRoles();
+  const { roles, companies, zones, agencies, loading, error, refetch, createRole, updateRole, deleteRole } = useRoles();
   const { addToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -210,6 +210,11 @@ const RolesPage = () => {
       <div className="table-container glass">
         {loading ? (
           <div className="loading-state">Chargement...</div>
+        ) : error ? (
+          <div className="error-state">
+            <span>Échec du chargement des rôles.</span>
+            <button type="button" className="btn-secondary" onClick={refetch}>Réessayer</button>
+          </div>
         ) : (
           <table className="data-table">
             <thead>

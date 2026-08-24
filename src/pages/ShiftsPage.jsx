@@ -14,7 +14,7 @@ const ShiftsPage = () => {
   const canCreate = can(user, 'shifts', 'create');
   const canUpdate = can(user, 'shifts', 'update');
   const canDelete = can(user, 'shifts', 'delete');
-  const { shifts, companies, agencies, loading, createShift, updateShift, deleteShift } = useShifts();
+  const { shifts, companies, agencies, loading, error, refetch, createShift, updateShift, deleteShift } = useShifts();
   const { addToast } = useToast();
 
   // Modal State
@@ -105,6 +105,11 @@ const ShiftsPage = () => {
       <div className="table-container glass">
         {loading ? (
           <div className="loading-state">Chargement...</div>
+        ) : error ? (
+          <div className="error-state">
+            <span>Échec du chargement des shifts.</span>
+            <button type="button" className="btn-secondary" onClick={refetch}>Réessayer</button>
+          </div>
         ) : (
           <table className="data-table">
             <thead>

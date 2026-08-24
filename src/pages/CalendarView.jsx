@@ -4,10 +4,8 @@ import '../styles/pages/Calendar.css';
 import { Search, Building, MapPin } from 'lucide-react';
 import { useCalendarUsers } from '../hooks/useCalendarUsers';
 
-const ZONES = ['Ariana', 'Ben Arous', 'Bizerte', 'El Aouina', 'El Menzah', 'Gabès', 'Hammamet', 'Manouba', 'Monastir', 'Nabeul & Hammamet', 'Sfax', 'Sousse', 'Tunis'];
-
 const CalendarView = () => {
-  const { users, agencies, companies, shifts, loading } = useCalendarUsers();
+  const { users, agencies, zones, companies, shifts, loading, error } = useCalendarUsers();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedZone, setSelectedZone] = useState('');
   const [selectedAgencyId, setSelectedAgencyId] = useState(''); // '' = All agencies
@@ -93,7 +91,7 @@ const CalendarView = () => {
           onChange={(e) => setSelectedZone(e.target.value)}
         >
           <option value="">Toutes les zones</option>
-          {ZONES.map(z => <option key={z} value={z}>{z}</option>)}
+          {zones.map(z => <option key={z.id} value={z.name}>{z.name}</option>)}
         </select>
 
         {agencies.length > 0 && (
@@ -124,6 +122,10 @@ const CalendarView = () => {
       <div className="calendar-container">
         {loading ? (
           <div style={{textAlign: 'center', marginTop: '2rem'}}>Chargement du planning...</div>
+        ) : error ? (
+          <div style={{textAlign: 'center', marginTop: '2rem', color: '#ef4444'}}>
+            Échec du chargement du planning. Réessayez plus tard.
+          </div>
         ) : (
           <CalendarGrid users={filteredUsers} />
         )}

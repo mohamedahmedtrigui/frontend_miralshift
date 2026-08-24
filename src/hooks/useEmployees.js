@@ -8,6 +8,7 @@ import { useReferenceStore } from '../store/referenceStore';
 export function useEmployees() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const {
     roles, companies, agencies, zones, shifts,
     fetchRoles, fetchCompanies, fetchAgencies, fetchZones, fetchShifts,
@@ -15,6 +16,7 @@ export function useEmployees() {
 
   const refetch = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [usersData] = await Promise.all([
         userService.getAll(),
@@ -25,6 +27,9 @@ export function useEmployees() {
         fetchShifts(),
       ]);
       setUsers(usersData);
+    } catch (err) {
+      console.error('Failed to fetch employees', err);
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -55,6 +60,7 @@ export function useEmployees() {
     zones: zones || [],
     shifts: shifts || [],
     loading,
+    error,
     refetch,
     createUser,
     updateUser,

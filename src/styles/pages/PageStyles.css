@@ -159,6 +159,16 @@
   color: var(--text-muted);
 }
 
+.error-state {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: #ef4444;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
 /* Shared 2-column form row, collapses to 1 column on small screens */
 .form-row-2col {
   display: grid;

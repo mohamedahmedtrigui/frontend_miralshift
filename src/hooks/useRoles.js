@@ -5,10 +5,12 @@ import { useReferenceStore } from '../store/referenceStore';
 export function useRoles() {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { companies, zones, agencies, fetchCompanies, fetchZones, fetchAgencies, setRoles: cacheRoles } = useReferenceStore();
 
   const refetch = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [rolesData] = await Promise.all([
         roleService.getAll(),
@@ -18,6 +20,9 @@ export function useRoles() {
       ]);
       setRoles(rolesData);
       cacheRoles(rolesData);
+    } catch (err) {
+      console.error('Failed to fetch roles', err);
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -46,6 +51,7 @@ export function useRoles() {
     zones: zones || [],
     agencies: agencies || [],
     loading,
+    error,
     refetch,
     createRole,
     updateRole,

@@ -5,10 +5,12 @@ import { useReferenceStore } from '../store/referenceStore';
 export function useShifts() {
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { companies, agencies, fetchCompanies, fetchAgencies, setShifts: cacheShifts } = useReferenceStore();
 
   const refetch = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [shiftsData] = await Promise.all([
         shiftService.getAll(),
@@ -17,6 +19,9 @@ export function useShifts() {
       ]);
       setShifts(shiftsData);
       cacheShifts(shiftsData);
+    } catch (err) {
+      console.error('Failed to fetch shifts', err);
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -44,6 +49,7 @@ export function useShifts() {
     companies: companies || [],
     agencies: agencies || [],
     loading,
+    error,
     refetch,
     createShift,
     updateShift,

@@ -5,23 +5,26 @@ import { useReferenceStore } from '../store/referenceStore';
 export function useCalendarUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { agencies, fetchAgencies } = useReferenceStore();
+  const [error, setError] = useState(null);
+  const { agencies, zones, fetchAgencies, fetchZones } = useReferenceStore();
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setError(null);
       try {
-        const [usersData] = await Promise.all([calendarService.getAll(), fetchAgencies()]);
+        const [usersData] = await Promise.all([calendarService.getAll(), fetchAgencies(), fetchZones()]);
         if (!cancelled) setUsers(usersData);
-      } catch (error) {
-        console.error('Failed to fetch calendar:', error);
+      } catch (err) {
+        console.error('Failed to fetch calendar:', err);
+        if (!cancelled) setError(err);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [fetchAgencies]);
+  }, [fetchAgencies, fetchZones]);
 
   // Companies shown here are derived from the users actually on the
   // calendar, not the full reference list — no separate fetch needed.
@@ -51,5 +54,5 @@ export function useCalendarUsers() {
     return list;
   }, [users]);
 
-  return { users, agencies: agencies || [], companies, shifts, loading };
+  return { users, agencies: agencies || [], zones: zones || [], companies, shifts, loading, error };
 }
