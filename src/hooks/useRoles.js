@@ -5,7 +5,7 @@ import { useReferenceStore } from '../store/referenceStore';
 export function useRoles() {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { companies, zones, fetchCompanies, fetchZones, setRoles: cacheRoles } = useReferenceStore();
+  const { companies, zones, agencies, fetchCompanies, fetchZones, fetchAgencies, setRoles: cacheRoles } = useReferenceStore();
 
   const refetch = useCallback(async () => {
     setLoading(true);
@@ -14,13 +14,14 @@ export function useRoles() {
         roleService.getAll(),
         fetchCompanies(),
         fetchZones(),
+        fetchAgencies(),
       ]);
       setRoles(rolesData);
       cacheRoles(rolesData);
     } finally {
       setLoading(false);
     }
-  }, [fetchCompanies, fetchZones, cacheRoles]);
+  }, [fetchCompanies, fetchZones, fetchAgencies, cacheRoles]);
 
   useEffect(() => { refetch(); }, [refetch]);
 
@@ -43,6 +44,7 @@ export function useRoles() {
     roles,
     companies: companies || [],
     zones: zones || [],
+    agencies: agencies || [],
     loading,
     refetch,
     createRole,

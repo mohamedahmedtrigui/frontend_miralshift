@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, ShieldCheck, ShieldAlert, Shield } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Edit2, Trash2, ShieldCheck, ShieldAlert, Shield, Search } from 'lucide-react';
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../components/Toast';
@@ -9,14 +9,19 @@ import { useAuthStore } from '../store/authStore';
 import { useRoles } from '../hooks/useRoles';
 import '../styles/pages/PageStyles.css';
 
-// Matches the actual backend resources (routes/api.php) — there is no separate
-// "shifts" model/route, shifts are fields on the users resource.
-const RESOURCES = ['users', 'roles', 'companies'];
+// Matches the actual backend resources gated by CheckRolePermission
+// (routes/api.php).
+const RESOURCES = ['users', 'roles', 'companies', 'shifts'];
 const ACTIONS = ['create', 'read', 'update', 'delete'];
+
+// One entry per navigable screen — independent of the create/read/update/
+// delete matrix below. 'calendar' has no CRUD actions of its own, so this is
+// the only access control it gets.
+const INTERFACES = ['calendar', 'users', 'roles', 'companies', 'shifts'];
 
 // Values stay in English to match the stored access_level/permissions keys —
 // these maps are for display only.
-const RESOURCE_LABELS = { users: 'Employés', roles: 'Rôles', companies: 'Compagnies' };
+const INTERFACE_LABELS = { calendar: 'Calendrier', users: 'Employés', roles: 'Rôles', companies: 'Compagnies', shifts: 'Shifts' };
 const ACTION_LABELS = { create: 'Créer', read: 'Lire', update: 'Modifier', delete: 'Supprimer' };
 const ACCESS_LEVEL_LABELS = { none: 'Aucun accès', restricted: 'Accès restreint', full: 'Accès complet' };
 
@@ -25,31 +30,45 @@ const RolesPage = () => {
   const canCreate = can(user, 'roles', 'create');
   const canUpdate = can(user, 'roles', 'update');
   const canDelete = can(user, 'roles', 'delete');
-  const { roles, companies, zones, loading, createRole, updateRole, deleteRole } = useRoles();
+  const { roles, companies, zones, agencies, loading, createRole, updateRole, deleteRole } = useRoles();
   const { addToast } = useToast();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredRoles = useMemo(() => {
+    if (!searchQuery) return roles;
+    const q = searchQuery.toLowerCase();
+    return roles.filter(r =>
+      r.name.toLowerCase().includes(q) ||
+      (r.description || '').toLowerCase().includes(q)
+    );
+  }, [roles, searchQuery]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', description: '', access_level: 'none', allowed_zones: [], allowed_companies: [], permissions: {}
+    name: '', description: '', access_level: 'none', allowed_zones: [], allowed_companies: [], allowed_agencies: [], interface_access: [], permissions: {}
   });
 
   const openModal = (role = null) => {
     if (role) {
       setEditingId(role.id);
-      setFormData({ 
-        name: role.name, 
-        description: role.description || '', 
+      setFormData({
+        name: role.name,
+        description: role.description || '',
         access_level: role.access_level,
         allowed_zones: role.allowed_zones || [],
         allowed_companies: role.allowed_companies || [],
+        allowed_agencies: role.allowed_agencies || [],
+        interface_access: role.interface_access || [],
         permissions: role.permissions || {}
       });
     } else {
       setEditingId(null);
-      setFormData({ name: '', description: '', access_level: 'none', allowed_zones: [], allowed_companies: [], permissions: {} });
+      setFormData({ name: '', description: '', access_level: 'none', allowed_zones: [], allowed_companies: [], allowed_agencies: [], interface_access: [], permissions: {} });
     }
     setIsModalOpen(true);
   };
@@ -58,6 +77,8 @@ const RolesPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       if (editingId) {
         await updateRole(editingId, formData);
@@ -70,22 +91,27 @@ const RolesPage = () => {
     } catch (error) {
       console.error('Failed to save role', error);
       addToast(getErrorMessage(error, 'Erreur lors de l\'enregistrement du rôle'), 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const requestDelete = (role) => setDeleteTarget(role);
-  const cancelDelete = () => setDeleteTarget(null);
+  const cancelDelete = () => { if (!isDeleting) setDeleteTarget(null); };
 
   const confirmDelete = async () => {
     const role = deleteTarget;
-    if (!role) return;
-    setDeleteTarget(null);
+    if (!role || isDeleting) return;
+    setIsDeleting(true);
     try {
       await deleteRole(role.id);
       addToast(`Rôle ${role.name} supprimé avec succès`);
+      setDeleteTarget(null);
     } catch (error) {
       console.error('Failed to delete role', error);
       addToast(getErrorMessage(error, 'Erreur lors de la suppression du rôle'), 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -103,12 +129,32 @@ const RolesPage = () => {
     });
   };
 
-  const toggleCompany = (companyId) => {
+  const toggleInterface = (interfaceKey) => {
     setFormData(prev => {
-      const current = prev.allowed_companies || [];
+      const current = prev.interface_access || [];
+      const next = current.includes(interfaceKey) ? current.filter(i => i !== interfaceKey) : [...current, interfaceKey];
+      return { ...prev, interface_access: next };
+    });
+  };
+
+  // A role belongs to at most one company — clicking a chip replaces
+  // whatever was selected instead of adding to a list; clicking the already-
+  // selected one clears it back to "all companies".
+  const selectCompany = (companyId) => {
+    setFormData(prev => {
       const id = companyId.toString();
-      const next = current.includes(id) ? current.filter(c => c !== id) : [...current, id];
-      return { ...prev, allowed_companies: next };
+      const alreadySelected = (prev.allowed_companies || [])[0] === id;
+      return { ...prev, allowed_companies: alreadySelected ? [] : [id] };
+    });
+  };
+
+  // Same one-at-a-time behavior as selectCompany — a role belongs to at
+  // most one agency.
+  const selectAgency = (agencyId) => {
+    setFormData(prev => {
+      const id = agencyId.toString();
+      const alreadySelected = (prev.allowed_agencies || [])[0] === id;
+      return { ...prev, allowed_agencies: alreadySelected ? [] : [id] };
     });
   };
 
@@ -149,6 +195,18 @@ const RolesPage = () => {
         )}
       </header>
 
+      <div className="table-toolbar">
+        <div className="search-bar glass">
+          <Search size={18} />
+          <input
+            type="text"
+            placeholder="Rechercher un rôle..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
       <div className="table-container glass">
         {loading ? (
           <div className="loading-state">Chargement...</div>
@@ -160,12 +218,14 @@ const RolesPage = () => {
                 <th>Description</th>
                 <th>Niveau d'accès</th>
                 <th>Zones autorisées</th>
-                <th>Compagnies autorisées</th>
+                <th>Compagnie autorisée</th>
+                <th>Agence autorisée</th>
+                <th>Interfaces</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {roles.map(role => (
+              {filteredRoles.map(role => (
                 <tr key={role.id}>
                   <td>
                     <strong>{role.name}</strong>
@@ -184,6 +244,16 @@ const RolesPage = () => {
                     {role.allowed_companies && role.allowed_companies.length > 0 ? (
                       companies.filter(c => role.allowed_companies.includes(c.id.toString())).map(c => c.name).join(', ') || role.allowed_companies.join(', ')
                     ) : 'Toutes'}
+                  </td>
+                  <td>
+                    {role.allowed_agencies && role.allowed_agencies.length > 0 ? (
+                      agencies.filter(a => role.allowed_agencies.includes(a.id.toString())).map(a => a.name).join(', ') || role.allowed_agencies.join(', ')
+                    ) : 'Toutes'}
+                  </td>
+                  <td>
+                    {role.interface_access && role.interface_access.length > 0
+                      ? role.interface_access.map(i => INTERFACE_LABELS[i] || i).join(', ')
+                      : 'Toutes'}
                   </td>
                   <td>
                     <div className="action-buttons">
@@ -205,9 +275,9 @@ const RolesPage = () => {
                   </td>
                 </tr>
               ))}
-              {roles.length === 0 && (
+              {filteredRoles.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="empty-state">Aucun rôle trouvé</td>
+                  <td colSpan="8" className="empty-state">Aucun rôle trouvé</td>
                 </tr>
               )}
             </tbody>
@@ -215,10 +285,11 @@ const RolesPage = () => {
         )}
       </div>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={closeModal} 
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
         title={editingId ? 'Modifier le rôle' : 'Ajouter un rôle'}
+        closeDisabled={isSubmitting}
       >
         <form onSubmit={handleSubmit} className="crud-form">
           <div className="form-group">
@@ -253,8 +324,54 @@ const RolesPage = () => {
             </select>
           </div>
 
+          {formData.access_level !== 'none' && (
+            <div className="form-group">
+              <label>Interfaces et permissions</label>
+              <div className="permissions-grid">
+                {INTERFACES.map(key => {
+                  const isFull = formData.access_level === 'full';
+                  const interfaceOn = isFull || (formData.interface_access || []).includes(key);
+                  const hasActions = RESOURCES.includes(key);
+                  return (
+                    <div key={key} className="permission-row">
+                      <label className="permission-interface-toggle">
+                        <input
+                          type="checkbox"
+                          checked={interfaceOn}
+                          onChange={() => toggleInterface(key)}
+                          disabled={isFull}
+                        />
+                        {INTERFACE_LABELS[key]}
+                      </label>
+                      {hasActions && (
+                        <div className="permission-actions nested-actions">
+                          {ACTIONS.map(action => (
+                            <label key={action} className="permission-action">
+                              <input
+                                type="checkbox"
+                                checked={formData.permissions?.[key]?.includes(action) || false}
+                                onChange={() => togglePermission(key, action)}
+                                disabled={isFull || !interfaceOn}
+                              />
+                              {ACTION_LABELS[action]}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <span className="subtext">
+                {formData.access_level === 'full'
+                  ? "L'accès complet donne accès à toutes les interfaces et actions."
+                  : 'Aucune interface cochée = accès à toutes les interfaces.'}
+              </span>
+            </div>
+          )}
+
           {formData.access_level === 'restricted' && (
-            <div className="form-row-2col">
+            <>
               <div className="form-group">
                 <label>Zones autorisées</label>
                 <div className="chip-list">
@@ -270,58 +387,49 @@ const RolesPage = () => {
                   ))}
                 </div>
               </div>
-              <div className="form-group">
-                <label>Compagnies autorisées</label>
-                <div className="chip-list">
-                  {companies.map(c => (
-                    <button
-                      type="button"
-                      key={c.id}
-                      className={`chip ${(formData.allowed_companies || []).includes(c.id.toString()) ? 'active' : ''}`}
-                      onClick={() => toggleCompany(c.id)}
-                    >
-                      {c.name}
-                    </button>
-                  ))}
+
+              <div className="form-row-2col">
+                <div className="form-group">
+                  <label>Compagnie autorisée</label>
+                  <div className="chip-list">
+                    {companies.map(c => (
+                      <button
+                        type="button"
+                        key={c.id}
+                        className={`chip ${(formData.allowed_companies || [])[0] === c.id.toString() ? 'active' : ''}`}
+                        onClick={() => selectCompany(c.id)}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="subtext">Un rôle est rattaché à une seule compagnie · aucune sélection = toutes.</span>
+                </div>
+                <div className="form-group">
+                  <label>Agence autorisée</label>
+                  <div className="chip-list">
+                    {agencies.map(a => (
+                      <button
+                        type="button"
+                        key={a.id}
+                        className={`chip ${(formData.allowed_agencies || [])[0] === a.id.toString() ? 'active' : ''}`}
+                        onClick={() => selectAgency(a.id)}
+                      >
+                        {a.name}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="subtext">Un rôle est rattaché à une seule agence · aucune sélection = toutes.</span>
                 </div>
               </div>
-            </div>
-          )}
-
-          {formData.access_level !== 'none' && (
-            <div className="form-group">
-              <label>Permissions détaillées</label>
-              <div className="permissions-grid">
-                {RESOURCES.map(res => (
-                  <div key={res} className="permission-row">
-                    <span className="permission-resource">{RESOURCE_LABELS[res]}</span>
-                    <div className="permission-actions">
-                      {ACTIONS.map(action => (
-                        <label key={action} className="permission-action">
-                          <input
-                            type="checkbox"
-                            checked={formData.permissions?.[res]?.includes(action) || false}
-                            onChange={() => togglePermission(res, action)}
-                            disabled={formData.access_level === 'full'}
-                          />
-                          {ACTION_LABELS[action]}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                {formData.access_level === 'full' && (
-                  <p style={{fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem'}}>
-                    L'accès complet accorde automatiquement toutes les permissions.
-                  </p>
-                )}
-              </div>
-            </div>
+            </>
           )}
 
           <div className="form-actions">
-            <button type="button" className="btn-secondary" onClick={closeModal}>Annuler</button>
-            <button type="submit" className="btn-primary">Enregistrer le rôle</button>
+            <button type="button" className="btn-secondary" onClick={closeModal} disabled={isSubmitting}>Annuler</button>
+            <button type="submit" className="btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? 'Enregistrement...' : 'Enregistrer le rôle'}
+            </button>
           </div>
         </form>
       </Modal>
@@ -332,6 +440,7 @@ const RolesPage = () => {
         message={deleteTarget ? `Êtes-vous sûr de vouloir supprimer le rôle "${deleteTarget.name}" ? Cette action est irréversible.` : ''}
         confirmLabel="Supprimer"
         danger
+        isLoading={isDeleting}
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
       />

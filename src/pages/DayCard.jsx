@@ -3,8 +3,10 @@ import EmployeeShiftCard from './EmployeeShiftCard';
 import { DAY_LABELS } from '../utils/days';
 
 const DayCard = ({ dayName, workingUsers, offUsers }) => {
-  // Sort users by shift start time
-  const sortedUsers = [...workingUsers].sort((a, b) => a.shift_start.localeCompare(b.shift_start));
+  // Sort users by shift start time — users without a shift assigned sort last.
+  const sortedUsers = [...workingUsers].sort((a, b) =>
+    (a.shift?.start_time || '99:99').localeCompare(b.shift?.start_time || '99:99')
+  );
 
   return (
     <div className="day-card glass">

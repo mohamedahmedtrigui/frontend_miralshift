@@ -37,5 +37,19 @@ export function useCalendarUsers() {
     return list;
   }, [users]);
 
-  return { users, agencies: agencies || [], companies, loading };
+  // Same idea for the shift color legend — only the shifts actually
+  // assigned to someone on the calendar are worth showing a key for.
+  const shifts = useMemo(() => {
+    const seen = new Set();
+    const list = [];
+    users.forEach(user => {
+      if (user.shift && !seen.has(user.shift.id)) {
+        seen.add(user.shift.id);
+        list.push(user.shift);
+      }
+    });
+    return list;
+  }, [users]);
+
+  return { users, agencies: agencies || [], companies, shifts, loading };
 }

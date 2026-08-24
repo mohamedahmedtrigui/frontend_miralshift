@@ -204,6 +204,47 @@
   color: white;
 }
 
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.chip-list.read-only .chip {
+  cursor: default;
+}
+
+/* A field the form derives from something else (e.g. a role's company) —
+   looks like a form-control but isn't editable, so no cursor/focus affordance. */
+.readonly-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  min-height: 1.4em;
+}
+
+.multi-select {
+  width: 100%;
+  height: 160px;
+  overflow-y: auto;
+  cursor: pointer;
+}
+
+.multi-select option {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.multi-select option:checked {
+  background-color: var(--accent-primary);
+  color: white;
+}
+
 /* Granular permissions — a stack of rows instead of a table, so it never
    needs horizontal scroll or gets clipped inside the modal */
 .permissions-grid {
@@ -218,9 +259,7 @@
 
 .permission-row {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 0.5rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border-light);
@@ -229,6 +268,15 @@
 .permission-row:last-of-type {
   border-bottom: none;
   padding-bottom: 0;
+}
+
+.permission-interface-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
 .permission-resource {
@@ -242,6 +290,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+/* Indented under its interface toggle, so it visually reads as "these
+   actions belong to that interface" instead of a disconnected row. */
+.permission-actions.nested-actions {
+  margin-left: 1.6rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--border-light);
 }
 
 .permission-action {

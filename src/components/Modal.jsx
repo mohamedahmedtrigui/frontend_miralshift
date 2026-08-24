@@ -2,7 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import '../styles/components/Modal.css';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, closeDisabled = false }) => {
   if (!isOpen) return null;
 
   return (
@@ -10,7 +10,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
       <div className="modal-content glass">
         <div className="modal-header">
           <h2>{title}</h2>
-          <button className="close-btn" onClick={onClose}>
+          <button className="close-btn" onClick={onClose} disabled={closeDisabled}>
             <X size={20} />
           </button>
         </div>

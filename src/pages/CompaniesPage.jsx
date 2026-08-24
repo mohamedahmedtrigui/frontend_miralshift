@@ -21,6 +21,8 @@ const CompaniesPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({ name: '', logo: '', color: '#3b82f6', description: '' });
   const [fileToUpload, setFileToUpload] = useState(null);
 
@@ -40,7 +42,8 @@ const CompaniesPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    if (isSubmitting) return;
+
     const submitData = new FormData();
     submitData.append('name', formData.name);
     submitData.append('color', formData.color);
@@ -53,6 +56,7 @@ const CompaniesPage = () => {
       submitData.append('logo', formData.logo);
     }
 
+    setIsSubmitting(true);
     try {
       if (editingId) {
         await updateCompany(editingId, submitData);
@@ -65,22 +69,27 @@ const CompaniesPage = () => {
     } catch (error) {
       console.error('Failed to save company', error);
       addToast(getErrorMessage(error, 'Erreur lors de l\'enregistrement de la compagnie'), 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const requestDelete = (company) => setDeleteTarget(company);
-  const cancelDelete = () => setDeleteTarget(null);
+  const cancelDelete = () => { if (!isDeleting) setDeleteTarget(null); };
 
   const confirmDelete = async () => {
     const company = deleteTarget;
-    if (!company) return;
-    setDeleteTarget(null);
+    if (!company || isDeleting) return;
+    setIsDeleting(true);
     try {
       await deleteCompany(company.id);
       addToast(`Compagnie ${company.name} supprimée avec succès`);
+      setDeleteTarget(null);
     } catch (error) {
       console.error('Failed to delete company', error);
       addToast(getErrorMessage(error, 'Erreur lors de la suppression de la compagnie'), 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -166,10 +175,11 @@ const CompaniesPage = () => {
         )}
       </div>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={closeModal} 
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
         title={editingId ? 'Modifier la compagnie' : 'Ajouter une compagnie'}
+        closeDisabled={isSubmitting}
       >
         <form onSubmit={handleSubmit} className="crud-form">
           <div className="form-group">
@@ -238,8 +248,10 @@ const CompaniesPage = () => {
             />
           </div>
           <div className="form-actions">
-            <button type="button" className="btn-secondary" onClick={closeModal}>Annuler</button>
-            <button type="submit" className="btn-primary">Enregistrer la compagnie</button>
+            <button type="button" className="btn-secondary" onClick={closeModal} disabled={isSubmitting}>Annuler</button>
+            <button type="submit" className="btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? 'Enregistrement...' : 'Enregistrer la compagnie'}
+            </button>
           </div>
         </form>
       </Modal>
@@ -250,6 +262,7 @@ const CompaniesPage = () => {
         message={deleteTarget ? `Êtes-vous sûr de vouloir supprimer "${deleteTarget.name}" ? Cette action est irréversible.` : ''}
         confirmLabel="Supprimer"
         danger
+        isLoading={isDeleting}
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
       />

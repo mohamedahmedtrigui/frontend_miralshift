@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Calendar, Users, Shield, Building2, LogOut, ChevronLeft, Menu } from 'lucide-react';
+import { Calendar, Users, Shield, Building2, Clock, LogOut, ChevronLeft, Menu } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { canAccessInterface } from '../utils/permissions';
 import '../styles/components/Sidebar.css';
 
 const Sidebar = () => {
@@ -50,22 +51,36 @@ const Sidebar = () => {
         </div>
 
         <nav className="sidebar-nav">
-          <NavLink to="/calendar" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={() => setIsMobileOpen(false)}>
-            <Calendar size={20} />
-            <span>Calendrier</span>
-          </NavLink>
-          <NavLink to="/employees" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={() => setIsMobileOpen(false)}>
-            <Users size={20} />
-            <span>Employés</span>
-          </NavLink>
-          <NavLink to="/roles" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={() => setIsMobileOpen(false)}>
-            <Shield size={20} />
-            <span>Rôles</span>
-          </NavLink>
-          <NavLink to="/companies" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={() => setIsMobileOpen(false)}>
-            <Building2 size={20} />
-            <span>Compagnies</span>
-          </NavLink>
+          {canAccessInterface(user, 'calendar') && (
+            <NavLink to="/calendar" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={() => setIsMobileOpen(false)}>
+              <Calendar size={20} />
+              <span>Calendrier</span>
+            </NavLink>
+          )}
+          {canAccessInterface(user, 'users') && (
+            <NavLink to="/employees" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={() => setIsMobileOpen(false)}>
+              <Users size={20} />
+              <span>Employés</span>
+            </NavLink>
+          )}
+          {canAccessInterface(user, 'roles') && (
+            <NavLink to="/roles" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={() => setIsMobileOpen(false)}>
+              <Shield size={20} />
+              <span>Rôles</span>
+            </NavLink>
+          )}
+          {canAccessInterface(user, 'companies') && (
+            <NavLink to="/companies" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={() => setIsMobileOpen(false)}>
+              <Building2 size={20} />
+              <span>Compagnies</span>
+            </NavLink>
+          )}
+          {canAccessInterface(user, 'shifts') && (
+            <NavLink to="/shifts" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={() => setIsMobileOpen(false)}>
+              <Clock size={20} />
+              <span>Shifts</span>
+            </NavLink>
+          )}
         </nav>
 
         <div className="sidebar-footer">

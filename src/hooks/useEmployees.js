@@ -9,8 +9,8 @@ export function useEmployees() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const {
-    roles, companies, agencies, zones,
-    fetchRoles, fetchCompanies, fetchAgencies, fetchZones,
+    roles, companies, agencies, zones, shifts,
+    fetchRoles, fetchCompanies, fetchAgencies, fetchZones, fetchShifts,
   } = useReferenceStore();
 
   const refetch = useCallback(async () => {
@@ -22,12 +22,13 @@ export function useEmployees() {
         fetchCompanies(),
         fetchAgencies(),
         fetchZones(),
+        fetchShifts(),
       ]);
       setUsers(usersData);
     } finally {
       setLoading(false);
     }
-  }, [fetchRoles, fetchCompanies, fetchAgencies, fetchZones]);
+  }, [fetchRoles, fetchCompanies, fetchAgencies, fetchZones, fetchShifts]);
 
   useEffect(() => { refetch(); }, [refetch]);
 
@@ -52,6 +53,7 @@ export function useEmployees() {
     companies: companies || [],
     agencies: agencies || [],
     zones: zones || [],
+    shifts: shifts || [],
     loading,
     refetch,
     createUser,

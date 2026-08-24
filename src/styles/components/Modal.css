@@ -60,6 +60,16 @@
   color: var(--text-primary);
 }
 
+.close-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.close-btn:disabled:hover {
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+
 .modal-body {
   padding: var(--spacing-lg);
   overflow-y: auto;
@@ -138,6 +148,20 @@
 
 .btn-primary:hover {
   background-color: var(--accent-hover);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary:disabled:hover {
+  background-color: var(--accent-primary);
+}
+
+.btn-secondary:disabled:hover {
+  background-color: var(--bg-tertiary);
 }
 
 /* Responsive */

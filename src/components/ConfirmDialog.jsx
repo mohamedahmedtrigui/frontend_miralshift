@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import '../styles/components/Modal.css';
 import '../styles/components/ConfirmDialog.css';
 
-const ConfirmDialog = ({ isOpen, title, message, confirmLabel = 'Confirmer', danger = false, onConfirm, onCancel }) => {
+const ConfirmDialog = ({ isOpen, title, message, confirmLabel = 'Confirmer', danger = false, isLoading = false, onConfirm, onCancel }) => {
   if (!isOpen) return null;
 
   return (
@@ -17,13 +17,14 @@ const ConfirmDialog = ({ isOpen, title, message, confirmLabel = 'Confirmer', dan
           <p>{message}</p>
         </div>
         <div className="form-actions">
-          <button type="button" className="btn-secondary" onClick={onCancel}>Annuler</button>
+          <button type="button" className="btn-secondary" onClick={onCancel} disabled={isLoading}>Annuler</button>
           <button
             type="button"
             className={danger ? 'btn-danger' : 'btn-primary'}
             onClick={onConfirm}
+            disabled={isLoading}
           >
-            {confirmLabel}
+            {isLoading ? 'Traitement...' : confirmLabel}
           </button>
         </div>
       </div>

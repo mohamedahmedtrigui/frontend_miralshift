@@ -31,8 +31,12 @@ const EmployeeShiftCard = ({ user, isOff }) => {
       
       {!isOff && (
         <div className="shift-time">
-          <Clock size={14} />
-          <span>{user.shift_start} - {user.shift_end}</span>
+          {user.shift?.color ? (
+            <span className="shift-color-dot" style={{ backgroundColor: user.shift.color }} title={user.shift.name} />
+          ) : (
+            <Clock size={14} />
+          )}
+          <span>{user.shift ? `${user.shift.name} · ${user.shift.start_time} - ${user.shift.end_time}` : 'Aucun shift assigné'}</span>
         </div>
       )}
       {isOff && (
