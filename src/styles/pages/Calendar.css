@@ -1,0 +1,298 @@
+.calendar-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: var(--spacing-xl);
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.page-header h1 {
+  font-size: 1.75rem;
+  margin-bottom: var(--spacing-xs);
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+/* .search-bar lives in index.css — shared with EmployeesPage's toolbar */
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.company-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+}
+
+.company-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.company-toggle .company-btn {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.company-toggle .company-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.company-toggle .company-btn.active {
+  background: var(--accent-primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.company-select {
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  max-width: 160px;
+}
+
+/* Calendar layout — each day is a horizontal row (Monday, Tuesday, ...),
+   stacked vertically. Shift cards flow left-to-right within their day and
+   wrap onto new lines as the row narrows, so the page only ever scrolls
+   vertically, at any screen size — no nested/double scrolling, no
+   column-count breakpoints to maintain. */
+.calendar-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.calendar-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* Day Row */
+.day-card {
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-secondary);
+  padding: var(--spacing-md);
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.day-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.count-badge {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.day-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.empty-state {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: var(--spacing-sm) 0;
+  font-style: italic;
+}
+
+/* Employee Shift Card — a fixed-width tile that wraps within its day row */
+.shift-card {
+  width: 230px;
+  flex: 0 0 auto;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  border-left: 3px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shift-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.shift-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.shift-user-info {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.user-agency {
+  font-size: 0.75rem;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.user-agency::before {
+  content: '· ';
+}
+
+.company-logo {
+  width: 24px;
+  height: 24px;
+  background-color: white;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+}
+
+.shift-time {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* Working shifts are themed by the employee's company color (set via
+   --card-color/backgroundColor inline in EmployeeShiftCard.jsx) instead of
+   time-of-day, so the calendar reads by company at a glance. */
+.shift-card:not(.shift-off) .user-name,
+.shift-card:not(.shift-off) .shift-time {
+  color: var(--card-color, var(--accent-primary));
+}
+
+/* Day off is always red — it's a status, not a company brand. */
+.shift-off {
+  background-color: #fef2f2;
+  border-left-color: #ef4444;
+}
+.shift-off .user-name {
+  color: #ef4444;
+  text-decoration: line-through;
+}
+.off-text {
+  color: #ef4444;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+/* Responsive — flex-wrap already reflows the shift tiles at any width, this
+   just tightens things up on small screens. */
+
+/* Below this width, the 3 filter controls (company pill, zone select,
+   search) don't reliably fit sharing a wrapped flex line together — the
+   company pill can itself wrap to 2 internal lines while its neighbours
+   stay single-line, and depending on exact width the browser can place the
+   next control so close it visually overlaps the taller pill above it.
+   Force each control onto its own full-width row instead of trusting
+   flex-wrap to line-break a mix of single- and multi-line items. */
+@media (max-width: 900px) {
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .company-toggle-container,
+  .header-actions > select,
+  .search-bar {
+    width: 100%;
+  }
+
+  .search-bar input {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .day-card {
+    padding: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .shift-card {
+    width: 100%;
+  }
+}
