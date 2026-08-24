@@ -124,7 +124,7 @@ const ShiftsPage = () => {
             <tbody>
               {shifts.map(shift => (
                 <tr key={shift.id}>
-                  <td>
+                  <td data-label="Nom">
                     <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                       <span
                         title={shift.color}
@@ -133,15 +133,15 @@ const ShiftsPage = () => {
                       <strong>{shift.name}</strong>
                     </div>
                   </td>
-                  <td>{shift.company?.name || '-'}</td>
-                  <td>{shift.agency?.name || '-'}</td>
-                  <td>
+                  <td data-label="Compagnie">{shift.company?.name || '-'}</td>
+                  <td data-label="Agence">{shift.agency?.name || '-'}</td>
+                  <td data-label="Horaires">
                     <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
                       <Clock size={14} />
                       <span>{shift.start_time} - {shift.end_time}</span>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Actions">
                     <div className="action-buttons">
                       {canUpdate && (
                         <button className="icon-btn edit" onClick={() => openModal(shift)}><Edit2 size={16} /></button>

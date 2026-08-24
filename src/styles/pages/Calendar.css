@@ -317,6 +317,16 @@
   .day-card {
     padding: var(--spacing-sm);
   }
+
+  /* Let the whole page scroll (see index.css) instead of confining the
+     week's days to their own small scroll box. */
+  .calendar-page {
+    height: auto;
+  }
+
+  .calendar-container {
+    overflow: visible;
+  }
 }
 
 @media (max-width: 480px) {

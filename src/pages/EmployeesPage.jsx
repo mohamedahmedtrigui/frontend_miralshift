@@ -262,17 +262,17 @@ const EmployeesPage = () => {
             <tbody>
               {paginatedUsers.map(user => (
                 <tr key={user.id}>
-                  <td>
+                  <td data-label="Nom">
                     <div className="user-name-cell">
                       <strong>{user.first_name} {user.last_name}</strong>
                       {user.phone && <div className="subtext">{user.phone}</div>}
                     </div>
                   </td>
-                  <td>{user.username || '-'}</td>
-                  <td>
+                  <td data-label="Nom d'utilisateur">{user.username || '-'}</td>
+                  <td data-label="Rôle">
                     <span className="badge">{user.role?.name || 'Aucun rôle'}</span>
                   </td>
-                  <td>
+                  <td data-label="Compagnie">
                     {user.company ? (
                       <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                         {user.company.logo_url ? (
@@ -286,8 +286,8 @@ const EmployeesPage = () => {
                       </div>
                     ) : '-'}
                   </td>
-                  <td>{user.agency?.name || '-'}</td>
-                  <td>
+                  <td data-label="Agence">{user.agency?.name || '-'}</td>
+                  <td data-label="Shift">
                     {user.shift ? (
                       <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
                         <span style={{width: 10, height: 10, borderRadius: '50%', backgroundColor: user.shift.color || '#3b82f6', flexShrink: 0}} />
@@ -295,14 +295,14 @@ const EmployeesPage = () => {
                       </div>
                     ) : '-'}
                   </td>
-                  <td>
+                  <td data-label="Zones de dispatch">
                     {user.dispatch_zones && user.dispatch_zones.length > 0 ? (
                       <div style={{display: 'flex', flexWrap: 'wrap', gap: '4px'}}>
                         {user.dispatch_zones.map(z => <span key={z} className="badge">{z}</span>)}
                       </div>
                     ) : '-'}
                   </td>
-                  <td>
+                  <td data-label="Actions">
                     <div className="action-buttons">
                       {user.role?.access_level !== 'full' && canUpdate && (
                         <button className="icon-btn edit" onClick={() => openModal(user)}><Edit2 size={16} /></button>

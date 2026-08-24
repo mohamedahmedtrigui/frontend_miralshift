@@ -129,7 +129,7 @@ const CompaniesPage = () => {
             <tbody>
               {companies.map(company => (
                 <tr key={company.id}>
-                  <td>
+                  <td data-label="Logo">
                     {company.logo_url ? (
                       <div style={{width: 40, height: 40, borderRadius: 'var(--radius-md)', overflow: 'hidden'}}>
                         <img src={company.logo_url} alt={company.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
@@ -140,7 +140,7 @@ const CompaniesPage = () => {
                       </div>
                     )}
                   </td>
-                  <td>
+                  <td data-label="Nom de la compagnie">
                     <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                       <span
                         title={company.color}
@@ -149,8 +149,8 @@ const CompaniesPage = () => {
                       <strong>{company.name}</strong>
                     </div>
                   </td>
-                  <td>{company.description || '-'}</td>
-                  <td>
+                  <td data-label="Description">{company.description || '-'}</td>
+                  <td data-label="Actions">
                     <div className="action-buttons">
                       {canUpdate && (
                         <button className="icon-btn edit" onClick={() => openModal(company)}><Edit2 size={16} /></button>

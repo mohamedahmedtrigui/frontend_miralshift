@@ -232,35 +232,35 @@ const RolesPage = () => {
             <tbody>
               {filteredRoles.map(role => (
                 <tr key={role.id}>
-                  <td>
+                  <td data-label="Nom du rôle">
                     <strong>{role.name}</strong>
                   </td>
-                  <td>{role.description || '-'}</td>
-                  <td>
+                  <td data-label="Description">{role.description || '-'}</td>
+                  <td data-label="Niveau d'accès">
                     <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
                       {getLevelIcon(role.access_level)}
                       {ACCESS_LEVEL_LABELS[role.access_level] || role.access_level}
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Zones autorisées">
                     {role.allowed_zones && role.allowed_zones.length > 0 ? role.allowed_zones.join(', ') : 'Toutes'}
                   </td>
-                  <td>
+                  <td data-label="Compagnie autorisée">
                     {role.allowed_companies && role.allowed_companies.length > 0 ? (
                       companies.filter(c => role.allowed_companies.includes(c.id.toString())).map(c => c.name).join(', ') || role.allowed_companies.join(', ')
                     ) : 'Toutes'}
                   </td>
-                  <td>
+                  <td data-label="Agence autorisée">
                     {role.allowed_agencies && role.allowed_agencies.length > 0 ? (
                       agencies.filter(a => role.allowed_agencies.includes(a.id.toString())).map(a => a.name).join(', ') || role.allowed_agencies.join(', ')
                     ) : 'Toutes'}
                   </td>
-                  <td>
+                  <td data-label="Interfaces">
                     {role.interface_access && role.interface_access.length > 0
                       ? role.interface_access.map(i => INTERFACE_LABELS[i] || i).join(', ')
                       : 'Toutes'}
                   </td>
-                  <td>
+                  <td data-label="Actions">
                     <div className="action-buttons">
                       {canUpdate && (
                         <button className="icon-btn edit" onClick={() => openModal(role)}><Edit2 size={16} /></button>

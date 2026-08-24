@@ -100,6 +100,23 @@ body {
   .content-area {
     padding: var(--spacing-md);
   }
+
+  /* On mobile, scroll the whole page instead of trapping scroll inside a
+     fixed-height nested box — feels natural with touch and lets every page
+     (calendar, employees, roles, companies, shifts) grow to fit its content. */
+  .app-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .main-content {
+    overflow: visible;
+  }
+
+  .content-area {
+    overflow-y: visible;
+  }
 }
 
 /* Search bar — shared by the calendar's header and the Employees toolbar */
