@@ -5,6 +5,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../components/Toast';
 import { getErrorMessage } from '../utils/errors';
 import { can } from '../utils/permissions';
+import { companyBadgeText } from '../utils/companyLogo';
 import { useAuthStore } from '../store/authStore';
 import { useCompanies } from '../hooks/useCompanies';
 import '../styles/pages/PageStyles.css';
@@ -136,7 +137,7 @@ const CompaniesPage = () => {
                       </div>
                     ) : (
                       <div className="company-logo" style={{backgroundColor: '#e2e8f0', color: '#1e293b'}}>
-                        {company.logo || company.name.substring(0,2).toUpperCase()}
+                        {companyBadgeText(company)}
                       </div>
                     )}
                   </td>

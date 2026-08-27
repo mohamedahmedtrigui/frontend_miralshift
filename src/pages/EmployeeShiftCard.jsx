@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
+import { companyBadgeText } from '../utils/companyLogo';
 
 const EmployeeShiftCard = ({ user, isOff }) => {
   // Cards are themed after the employee's company color so the calendar
@@ -24,7 +25,7 @@ const EmployeeShiftCard = ({ user, isOff }) => {
           {user.company?.logo_url ? (
             <img src={user.company.logo_url} alt={user.company.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
           ) : (
-            user.company?.logo || 'CO'
+            companyBadgeText(user.company)
           )}
         </div>
       </div>
