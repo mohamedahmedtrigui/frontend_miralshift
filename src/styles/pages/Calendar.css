@@ -189,13 +189,16 @@
   font-style: italic;
 }
 
-/* Employee Shift Card — a fixed-width tile that wraps within its day row */
+/* Employee Shift Card — a fixed-width tile that wraps within its day row.
+   White inside, colored border only — company color reads through the
+   outline instead of tinting the whole tile. */
 .shift-card {
   width: 230px;
   flex: 0 0 auto;
   padding: var(--spacing-sm);
   border-radius: var(--radius-md);
-  border-left: 3px solid transparent;
+  background-color: var(--bg-secondary);
+  border: 1.5px solid transparent;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
@@ -228,6 +231,7 @@
 }
 
 .user-agency {
+    font-weight: bold;
   font-size: 0.75rem;
   opacity: 0.75;
   white-space: nowrap;
@@ -252,26 +256,41 @@
 }
 
 .shift-time {
+  margin-top: 2px;
+}
+
+/* The shift's own color fills this badge (set inline in
+   EmployeeShiftCard.jsx) so the time slot is legible at a glance instead of
+   riding on a near-invisible dot. */
+.shift-time-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.shift-time-empty {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
   font-size: 0.8rem;
   font-weight: 500;
-  margin-top: 2px;
+  color: var(--text-secondary);
 }
 
-/* Working shifts are themed by the employee's company color (set via
-   --card-color/backgroundColor inline in EmployeeShiftCard.jsx) instead of
-   time-of-day, so the calendar reads by company at a glance. */
-.shift-card:not(.shift-off) .user-name,
-.shift-card:not(.shift-off) .shift-time {
+/* The employee name is still themed by the company color (set via
+   --card-color inline in EmployeeShiftCard.jsx), so the calendar reads by
+   company at a glance even with the card interior now white. */
+.shift-card:not(.shift-off) .user-name {
   color: var(--card-color, var(--accent-primary));
 }
 
 /* Day off is always red — it's a status, not a company brand. */
 .shift-off {
   background-color: #fef2f2;
-  border-left-color: #ef4444;
+  border-color: #ef4444;
 }
 .shift-off .user-name {
   color: #ef4444;
