@@ -61,12 +61,12 @@ const CalendarView = () => {
               </select>
             ) : (
               <div className="company-toggle">
-                <button
+                {/* <button
                   className={`company-btn ${selectedCompanyId === '' ? 'active' : ''}`}
                   onClick={() => setSelectedCompanyId('')}
                 >
                   Toutes
-                </button>
+                </button> */}
                 {companies.map(c => (
                   <button
                     key={c.id}
