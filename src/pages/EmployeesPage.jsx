@@ -15,9 +15,10 @@ const EmployeesPage = () => {
   const canCreate = can(currentUser, 'users', 'create');
   const canUpdate = can(currentUser, 'users', 'update');
   const canDelete = can(currentUser, 'users', 'delete');
+  const canCreateShift = can(currentUser, 'shifts', 'create');
   const {
     users, roles, companies, agencies, zones, shifts, loading, error, refetch,
-    createUser, updateUser, deleteUser,
+    createUser, updateUser, deleteUser, createShift,
   } = useEmployees();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,6 +36,16 @@ const EmployeesPage = () => {
     role_id: '', company_id: '', agency_id: '', dispatch_zones: [], day_off: '',
     shift_id: '', start_date: ''
   });
+
+  // Inline "create a shift" mini-form shown next to the Shift select when
+  // the picked company/agency combo has none yet.
+  const [showShiftForm, setShowShiftForm] = useState(false);
+  const [isCreatingShift, setIsCreatingShift] = useState(false);
+  const [shiftFormData, setShiftFormData] = useState({ name: '', start_time: '', end_time: '', color: '#3b82f6' });
+  const resetShiftForm = () => {
+    setShowShiftForm(false);
+    setShiftFormData({ name: '', start_time: '', end_time: '', color: '#3b82f6' });
+  };
 
   const openModal = (user = null) => {
     if (user) {
@@ -61,10 +72,38 @@ const EmployeesPage = () => {
         shift_id: '', start_date: ''
       });
     }
+    resetShiftForm();
     setIsModalOpen(true);
   };
 
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => { resetShiftForm(); setIsModalOpen(false); };
+
+  const handleCreateShift = async () => {
+    if (isCreatingShift) return;
+    if (!shiftFormData.name || !shiftFormData.start_time || !shiftFormData.end_time) {
+      addToast('Renseignez le nom, l\'heure de début et de fin du shift', 'error');
+      return;
+    }
+    setIsCreatingShift(true);
+    try {
+      const shift = await createShift({
+        name: shiftFormData.name,
+        company_id: formData.company_id,
+        agency_id: formData.agency_id,
+        start_time: shiftFormData.start_time,
+        end_time: shiftFormData.end_time,
+        color: shiftFormData.color,
+      });
+      addToast(`Shift ${shift.name} créé avec succès`);
+      setFormData(prev => ({ ...prev, shift_id: shift.id.toString() }));
+      resetShiftForm();
+    } catch (error) {
+      console.error('Failed to create shift', error);
+      addToast(getErrorMessage(error, 'Erreur lors de la création du shift'), 'error');
+    } finally {
+      setIsCreatingShift(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -123,13 +162,18 @@ const EmployeesPage = () => {
 
   const showAuthFields = selectedRole && selectedRole.access_level !== 'none';
 
-  // A restricted role already carries its own company + zones (a role
-  // belongs to at most one company) — re-picking them on the employee form
-  // would just repeat the same choice twice. Once such a role is selected,
-  // these fields become a read-only display of what the role already
-  // dictates instead of a second select; an unrestricted role (or none
-  // selected) still lets the admin pick freely.
-  const roleLimitsCompanies = selectedRole?.access_level === 'restricted' && selectedRole.allowed_companies?.length > 0;
+  // A restricted role can carry its own zones/agency (a role belongs to at
+  // most one agency) — re-picking them on the employee form would just
+  // repeat the same choice twice, so those become a read-only display of
+  // what the role already dictates. Companies are different: a role can now
+  // allow several, so it's only locked to a single read-only value when the
+  // role restricts to exactly one; with several allowed, the admin still
+  // picks — just from a list narrowed to what the role allows.
+  const roleAllowedCompanies = selectedRole?.access_level === 'restricted' ? (selectedRole.allowed_companies || []) : [];
+  const roleLimitsCompanies = roleAllowedCompanies.length === 1;
+  const companyOptions = roleAllowedCompanies.length > 1
+    ? companies.filter(c => roleAllowedCompanies.includes(c.id.toString()))
+    : companies;
   const roleLimitsZones = selectedRole?.access_level === 'restricted' && selectedRole.allowed_zones?.length > 0;
   const roleLimitsAgency = selectedRole?.access_level === 'restricted' && selectedRole.allowed_agencies?.length > 0;
 
@@ -159,12 +203,15 @@ const EmployeesPage = () => {
     setFormData(prev => {
       const next = { ...prev, role_id: roleId };
       if (role?.access_level === 'restricted') {
-        if (role.allowed_companies?.length > 0) {
-          const roleCompanyId = role.allowed_companies[0];
-          if (roleCompanyId !== prev.company_id?.toString()) {
-            next.company_id = roleCompanyId;
+        const allowedCompanies = role.allowed_companies || [];
+        if (allowedCompanies.length === 1) {
+          if (allowedCompanies[0] !== prev.company_id?.toString()) {
+            next.company_id = allowedCompanies[0];
             next.shift_id = '';
           }
+        } else if (allowedCompanies.length > 1 && !allowedCompanies.includes(prev.company_id?.toString())) {
+          next.company_id = '';
+          next.shift_id = '';
         }
         if (role.allowed_zones?.length > 0) {
           next.dispatch_zones = [...role.allowed_zones];
@@ -352,6 +399,7 @@ const EmployeesPage = () => {
         onClose={closeModal}
         title={editingId ? "Modifier l'employé" : 'Ajouter un employé'}
         closeDisabled={isSubmitting}
+        size="lg"
       >
         <form onSubmit={handleSubmit} className="crud-form" autoComplete="off">
           {/* Workaround for browser autofill */}
@@ -418,14 +466,17 @@ const EmployeesPage = () => {
               ) : (
                 <select
                   className="form-control" value={formData.company_id}
-                  onChange={(e) => setFormData({...formData, company_id: e.target.value, shift_id: ''})}
+                  onChange={(e) => { setFormData({...formData, company_id: e.target.value, shift_id: ''}); resetShiftForm(); }}
                 >
                   <option value="">Sélectionner une compagnie</option>
-                  {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {companyOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               )}
               {roleLimitsCompanies && (
                 <span className="subtext">Définie par le rôle "{selectedRole.name}"</span>
+              )}
+              {roleAllowedCompanies.length > 1 && (
+                <span className="subtext">Limité aux compagnies autorisées par le rôle "{selectedRole.name}"</span>
               )}
             </div>
             <div className="form-group">
@@ -437,7 +488,7 @@ const EmployeesPage = () => {
               ) : (
                 <select
                   className="form-control" value={formData.agency_id}
-                  onChange={(e) => setFormData({...formData, agency_id: e.target.value, shift_id: ''})}
+                  onChange={(e) => { setFormData({...formData, agency_id: e.target.value, shift_id: ''}); resetShiftForm(); }}
                 >
                   <option value="">Sélectionner une agence</option>
                   {agencies.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -467,8 +518,61 @@ const EmployeesPage = () => {
                 <option key={s.id} value={s.id}>{s.name} ({s.start_time} - {s.end_time})</option>
               ))}
             </select>
-            {roleLimitsCompanies && roleLimitsAgency && availableShifts.length === 0 && (
+            {formData.company_id && formData.agency_id && availableShifts.length === 0 && !canCreateShift && (
               <span className="subtext">Configurez un shift pour cette compagnie/agence dans "Shifts" pour pouvoir en assigner un ici.</span>
+            )}
+            {canCreateShift && formData.company_id && formData.agency_id && availableShifts.length === 0 && !showShiftForm && (
+              <button type="button" className="btn-secondary" style={{marginTop: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px'}} onClick={() => setShowShiftForm(true)}>
+                <Plus size={14} />
+                <span>Créer un shift pour cette compagnie/agence</span>
+              </button>
+            )}
+            {showShiftForm && (
+              <div style={{marginTop: '8px', padding: '0.75rem', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)'}}>
+                <div className="form-group" style={{marginBottom: '0.5rem'}}>
+                  <label>Nom du shift</label>
+                  <input
+                    type="text" className="form-control"
+                    value={shiftFormData.name}
+                    onChange={(e) => setShiftFormData({...shiftFormData, name: e.target.value})}
+                  />
+                </div>
+                <div className="form-row-2col">
+                  <div className="form-group" style={{marginBottom: '0.5rem'}}>
+                    <label>Début (HH:MM)</label>
+                    <input
+                      type="time" className="form-control"
+                      value={shiftFormData.start_time}
+                      onChange={(e) => setShiftFormData({...shiftFormData, start_time: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group" style={{marginBottom: '0.5rem'}}>
+                    <label>Fin (HH:MM)</label>
+                    <input
+                      type="time" className="form-control"
+                      value={shiftFormData.end_time}
+                      onChange={(e) => setShiftFormData({...shiftFormData, end_time: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="form-group" style={{marginBottom: '0.75rem'}}>
+                  <label>Couleur</label>
+                  <div className="color-picker-row">
+                    <input
+                      type="color" className="color-input"
+                      value={shiftFormData.color}
+                      onChange={(e) => setShiftFormData({...shiftFormData, color: e.target.value})}
+                    />
+                    <span className="subtext">{shiftFormData.color}</span>
+                  </div>
+                </div>
+                <div style={{display: 'flex', gap: '8px'}}>
+                  <button type="button" className="btn-secondary" onClick={resetShiftForm} disabled={isCreatingShift}>Annuler</button>
+                  <button type="button" className="btn-primary" onClick={handleCreateShift} disabled={isCreatingShift}>
+                    {isCreatingShift ? 'Création...' : 'Créer le shift'}
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
