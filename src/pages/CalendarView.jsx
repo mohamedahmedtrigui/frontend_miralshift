@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CalendarGrid from './CalendarGrid';
 import '../styles/pages/Calendar.css';
 import { Search, Building, MapPin } from 'lucide-react';
@@ -9,12 +9,17 @@ const CalendarView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedZone, setSelectedZone] = useState('');
   const [selectedAgencyId, setSelectedAgencyId] = useState(''); // '' = All agencies
-  const [selectedCompanyIds, setSelectedCompanyIds] = useState([]); // [] = All companies
+  // Exactly one company is shown at a time — no combined "all companies"
+  // view, since an employee belonging to several companies would otherwise
+  // show up looking like they're on both calendars at once. Defaults to the
+  // first company once the list loads.
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
 
-  const toggleCompanyFilter = (companyId) => {
-    const id = companyId.toString();
-    setSelectedCompanyIds(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
-  };
+  useEffect(() => {
+    if (!selectedCompanyId && companies.length > 0) {
+      setSelectedCompanyId(companies[0].id.toString());
+    }
+  }, [companies, selectedCompanyId]);
 
   const filteredUsers = users.filter(user => {
     if (searchQuery && !`${user.first_name} ${user.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -26,7 +31,7 @@ const CalendarView = () => {
     if (selectedAgencyId && user.agency_id?.toString() !== selectedAgencyId) {
       return false;
     }
-    if (selectedCompanyIds.length > 0 && !(user.companies || []).some(c => selectedCompanyIds.includes(c.id.toString()))) {
+    if (selectedCompanyId && !(user.companies || []).some(c => c.id.toString() === selectedCompanyId)) {
       return false;
     }
     return true;
@@ -57,26 +62,19 @@ const CalendarView = () => {
             <Building size={16} className="text-secondary" />
             {companies.length > 4 ? (
               <select
-                multiple
-                className="company-select multi-select"
-                value={selectedCompanyIds}
-                onChange={(e) => setSelectedCompanyIds(Array.from(e.target.selectedOptions, opt => opt.value))}
+                className="company-select"
+                value={selectedCompanyId}
+                onChange={(e) => setSelectedCompanyId(e.target.value)}
               >
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             ) : (
               <div className="company-toggle">
-                <button
-                  className={`company-btn ${selectedCompanyIds.length === 0 ? 'active' : ''}`}
-                  onClick={() => setSelectedCompanyIds([])}
-                >
-                  Toutes
-                </button>
                 {companies.map(c => (
                   <button
                     key={c.id}
-                    className={`company-btn ${selectedCompanyIds.includes(c.id.toString()) ? 'active' : ''}`}
-                    onClick={() => toggleCompanyFilter(c.id)}
+                    className={`company-btn ${selectedCompanyId === c.id.toString() ? 'active' : ''}`}
+                    onClick={() => setSelectedCompanyId(c.id.toString())}
                   >
                     {c.logo_url ? (
                       <img src={c.logo_url} alt={c.name} style={{width: 16, height: 16, borderRadius: '50%', objectFit: 'cover'}} />
