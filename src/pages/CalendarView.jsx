@@ -9,7 +9,12 @@ const CalendarView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedZone, setSelectedZone] = useState('');
   const [selectedAgencyId, setSelectedAgencyId] = useState(''); // '' = All agencies
-  const [selectedCompanyId, setSelectedCompanyId] = useState(''); // '' = All companies
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState([]); // [] = All companies
+
+  const toggleCompanyFilter = (companyId) => {
+    const id = companyId.toString();
+    setSelectedCompanyIds(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
+  };
 
   const filteredUsers = users.filter(user => {
     if (searchQuery && !`${user.first_name} ${user.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -21,7 +26,7 @@ const CalendarView = () => {
     if (selectedAgencyId && user.agency_id?.toString() !== selectedAgencyId) {
       return false;
     }
-    if (selectedCompanyId && !(user.companies || []).some(c => c.id.toString() === selectedCompanyId)) {
+    if (selectedCompanyIds.length > 0 && !(user.companies || []).some(c => selectedCompanyIds.includes(c.id.toString()))) {
       return false;
     }
     return true;
@@ -52,26 +57,26 @@ const CalendarView = () => {
             <Building size={16} className="text-secondary" />
             {companies.length > 4 ? (
               <select
-                className="company-select"
-                value={selectedCompanyId}
-                onChange={(e) => setSelectedCompanyId(e.target.value)}
+                multiple
+                className="company-select multi-select"
+                value={selectedCompanyIds}
+                onChange={(e) => setSelectedCompanyIds(Array.from(e.target.selectedOptions, opt => opt.value))}
               >
-                <option value="">Toutes les compagnies</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             ) : (
               <div className="company-toggle">
-                {/* <button
-                  className={`company-btn ${selectedCompanyId === '' ? 'active' : ''}`}
-                  onClick={() => setSelectedCompanyId('')}
+                <button
+                  className={`company-btn ${selectedCompanyIds.length === 0 ? 'active' : ''}`}
+                  onClick={() => setSelectedCompanyIds([])}
                 >
                   Toutes
-                </button> */}
+                </button>
                 {companies.map(c => (
                   <button
                     key={c.id}
-                    className={`company-btn ${selectedCompanyId === c.id.toString() ? 'active' : ''}`}
-                    onClick={() => setSelectedCompanyId(c.id.toString())}
+                    className={`company-btn ${selectedCompanyIds.includes(c.id.toString()) ? 'active' : ''}`}
+                    onClick={() => toggleCompanyFilter(c.id)}
                   >
                     {c.logo_url ? (
                       <img src={c.logo_url} alt={c.name} style={{width: 16, height: 16, borderRadius: '50%', objectFit: 'cover'}} />
