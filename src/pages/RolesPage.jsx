@@ -78,6 +78,10 @@ const RolesPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+    if (formData.access_level === 'restricted' && (formData.allowed_companies || []).length === 0) {
+      addToast('Sélectionnez au moins une compagnie pour un rôle à accès restreint', 'error');
+      return;
+    }
     setIsSubmitting(true);
     try {
       if (editingId) {
@@ -137,14 +141,12 @@ const RolesPage = () => {
     });
   };
 
-  // A role belongs to at most one company — clicking a chip replaces
-  // whatever was selected instead of adding to a list; clicking the already-
-  // selected one clears it back to "all companies".
-  const selectCompany = (companyId) => {
+  const toggleCompany = (companyId) => {
     setFormData(prev => {
       const id = companyId.toString();
-      const alreadySelected = (prev.allowed_companies || [])[0] === id;
-      return { ...prev, allowed_companies: alreadySelected ? [] : [id] };
+      const current = prev.allowed_companies || [];
+      const next = current.includes(id) ? current.filter(c => c !== id) : [...current, id];
+      return { ...prev, allowed_companies: next };
     });
   };
 
@@ -401,14 +403,14 @@ const RolesPage = () => {
                       <button
                         type="button"
                         key={c.id}
-                        className={`chip ${(formData.allowed_companies || [])[0] === c.id.toString() ? 'active' : ''}`}
-                        onClick={() => selectCompany(c.id)}
+                        className={`chip ${(formData.allowed_companies || []).includes(c.id.toString()) ? 'active' : ''}`}
+                        onClick={() => toggleCompany(c.id)}
                       >
                         {c.name}
                       </button>
                     ))}
                   </div>
-                  <span className="subtext">Un rôle est rattaché à une seule compagnie · aucune sélection = toutes.</span>
+                  <span className="subtext">Sélectionnez une ou plusieurs compagnies. Au moins une compagnie est requise.</span>
                 </div>
                 <div className="form-group">
                   <label>Agence autorisée</label>
