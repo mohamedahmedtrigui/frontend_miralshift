@@ -33,7 +33,7 @@ const EmployeesPage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', phone: '', username: '', password: '',
-    role_id: '', company_id: '', agency_id: '', dispatch_zones: [], day_off: '',
+    role_id: '', company_ids: [], agency_id: '', dispatch_zones: [], day_off: '',
     shift_id: '', start_date: ''
   });
 
@@ -57,7 +57,7 @@ const EmployeesPage = () => {
         username: user.username || '',
         password: '',
         role_id: user.role_id || '',
-        company_id: user.company_id || '',
+        company_ids: user.company_ids || [],
         agency_id: user.agency_id || '',
         dispatch_zones: user.dispatch_zones || [],
         day_off: user.day_off || '',
@@ -68,7 +68,7 @@ const EmployeesPage = () => {
       setEditingId(null);
       setFormData({
         first_name: '', last_name: '', phone: '', username: '', password: '',
-        role_id: '', company_id: '', agency_id: '', dispatch_zones: [], day_off: '',
+        role_id: '', company_ids: [], agency_id: '', dispatch_zones: [], day_off: '',
         shift_id: '', start_date: ''
       });
     }
@@ -88,7 +88,7 @@ const EmployeesPage = () => {
     try {
       const shift = await createShift({
         name: shiftFormData.name,
-        company_id: formData.company_id,
+        company_ids: formData.company_ids,
         agency_id: formData.agency_id,
         start_time: shiftFormData.start_time,
         end_time: shiftFormData.end_time,
@@ -112,7 +112,6 @@ const EmployeesPage = () => {
     // Clean up empty strings to null for foreign keys
     const submitData = { ...formData };
     if (!submitData.role_id) submitData.role_id = null;
-    if (!submitData.company_id) submitData.company_id = null;
     if (!submitData.agency_id) submitData.agency_id = null;
     if (!submitData.shift_id) submitData.shift_id = null;
 
@@ -162,30 +161,23 @@ const EmployeesPage = () => {
 
   const showAuthFields = selectedRole && selectedRole.access_level !== 'none';
 
-  // A restricted role can carry its own zones/agency (a role belongs to at
-  // most one agency) — re-picking them on the employee form would just
-  // repeat the same choice twice, so those become a read-only display of
-  // what the role already dictates. Companies are different: a role can now
-  // allow several, so it's only locked to a single read-only value when the
-  // role restricts to exactly one; with several allowed, the admin still
-  // picks — just from a list narrowed to what the role allows.
-  const roleAllowedCompanies = selectedRole?.access_level === 'restricted' ? (selectedRole.allowed_companies || []) : [];
-  const roleLimitsCompanies = roleAllowedCompanies.length === 1;
-  const companyOptions = roleAllowedCompanies.length > 1
-    ? companies.filter(c => roleAllowedCompanies.includes(c.id.toString()))
-    : companies;
+  // A restricted role carries its own companies/zones/agency directly — an
+  // employee under it belongs to ALL of the role's companies at once (a
+  // role can now allow several), so there's nothing left for the admin to
+  // pick; the field is always locked, same as Agency/Zones already are.
+  const roleLocksCompanies = selectedRole?.access_level === 'restricted';
   const roleLimitsZones = selectedRole?.access_level === 'restricted' && selectedRole.allowed_zones?.length > 0;
   const roleLimitsAgency = selectedRole?.access_level === 'restricted' && selectedRole.allowed_agencies?.length > 0;
 
-  // These read-only displays always reflect the employee's actual stored
+  // This read-only display always reflects the employee's actual stored
   // values (formData), not the role's — the role only DRIVES formData (via
   // handleRoleChange, on picking/switching a role). Deriving straight from
   // the role instead would show the wrong thing whenever editing an existing
-  // employee whose company/agency/zones no longer match a role that was
+  // employee whose companies/agency/zones no longer match a role that was
   // edited after they were assigned.
-  const selectedCompany = useMemo(() => {
-    return companies.find(c => c.id.toString() === formData.company_id?.toString());
-  }, [companies, formData.company_id]);
+  const selectedCompanies = useMemo(() => {
+    return companies.filter(c => (formData.company_ids || []).includes(c.id.toString()));
+  }, [companies, formData.company_ids]);
 
   const matchingAgency = useMemo(() => {
     return agencies.find(a => a.id.toString() === formData.agency_id?.toString()) || null;
@@ -195,7 +187,7 @@ const EmployeesPage = () => {
     return zones.filter(z => (formData.dispatch_zones || []).includes(z.name));
   }, [zones, formData.dispatch_zones]);
 
-  // Picking a restricted role adopts its company/zones/agency directly
+  // Picking a restricted role adopts its companies/zones/agency directly
   // instead of just narrowing choices — there's nothing left for the admin
   // to pick.
   const handleRoleChange = (roleId) => {
@@ -204,15 +196,8 @@ const EmployeesPage = () => {
       const next = { ...prev, role_id: roleId };
       if (role?.access_level === 'restricted') {
         const allowedCompanies = role.allowed_companies || [];
-        if (allowedCompanies.length === 1) {
-          if (allowedCompanies[0] !== prev.company_id?.toString()) {
-            next.company_id = allowedCompanies[0];
-            next.shift_id = '';
-          }
-        } else if (allowedCompanies.length > 1 && !allowedCompanies.includes(prev.company_id?.toString())) {
-          next.company_id = '';
-          next.shift_id = '';
-        }
+        next.company_ids = [...allowedCompanies];
+        next.shift_id = '';
         if (role.allowed_zones?.length > 0) {
           next.dispatch_zones = [...role.allowed_zones];
         }
@@ -226,18 +211,32 @@ const EmployeesPage = () => {
       }
       return next;
     });
+    resetShiftForm();
   };
 
-  // A shift is tied to one company + one agency — only offer the ones that
-  // match what's currently picked, so an employee can't end up scheduled on
-  // a shift belonging to a different company/agency than their own.
+  // Free multi-select toggle, only used when the role doesn't already lock
+  // this field (see roleLocksCompanies above).
+  const toggleEmployeeCompany = (companyId) => {
+    setFormData(prev => {
+      const id = companyId.toString();
+      const current = prev.company_ids || [];
+      const next = current.includes(id) ? current.filter(c => c !== id) : [...current, id];
+      return { ...prev, company_ids: next, shift_id: '' };
+    });
+    resetShiftForm();
+  };
+
+  // A shift can belong to several companies but always exactly one agency —
+  // only offer the ones that share at least one company with the employee
+  // and match the agency exactly, so an employee can't end up scheduled on
+  // a shift belonging to an unrelated agency.
   const availableShifts = useMemo(() => {
-    if (!formData.company_id || !formData.agency_id) return [];
+    if (!(formData.company_ids || []).length || !formData.agency_id) return [];
     return shifts.filter(s =>
-      s.company_id?.toString() === formData.company_id.toString() &&
+      (s.company_ids || []).some(id => formData.company_ids.includes(id)) &&
       s.agency_id?.toString() === formData.agency_id.toString()
     );
-  }, [shifts, formData.company_id, formData.agency_id]);
+  }, [shifts, formData.company_ids, formData.agency_id]);
 
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users;
@@ -320,16 +319,9 @@ const EmployeesPage = () => {
                     <span className="badge">{user.role?.name || 'Aucun rôle'}</span>
                   </td>
                   <td data-label="Compagnie">
-                    {user.company ? (
-                      <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                        {user.company.logo_url ? (
-                           <img src={user.company.logo_url} alt={user.company.name} style={{width: 24, height: 24, borderRadius: '50%', objectFit: 'cover'}} />
-                        ) : (
-                           <div style={{width: 24, height: 24, borderRadius: '50%', background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold'}}>
-                             {user.company.logo || user.company.name.substring(0, 2).toUpperCase()}
-                           </div>
-                        )}
-                        <span>{user.company.name}</span>
+                    {user.companies && user.companies.length > 0 ? (
+                      <div style={{display: 'flex', flexWrap: 'wrap', gap: '4px'}}>
+                        {user.companies.map(c => <span key={c.id} className="badge">{c.name}</span>)}
                       </div>
                     ) : '-'}
                   </td>
@@ -452,31 +444,30 @@ const EmployeesPage = () => {
           <div className="form-row-2col">
             <div className="form-group">
               <label>Compagnie</label>
-              {roleLimitsCompanies ? (
-                <div className="readonly-field">
-                  {selectedCompany ? (
-                    <>
-                      {selectedCompany.logo_url ? (
-                        <img src={selectedCompany.logo_url} alt={selectedCompany.name} style={{width: 20, height: 20, borderRadius: '50%', objectFit: 'cover'}} />
-                      ) : null}
-                      <span>{selectedCompany.name}</span>
-                    </>
-                  ) : '-'}
+              {roleLocksCompanies ? (
+                <div className="chip-list read-only">
+                  {selectedCompanies.length > 0 ? selectedCompanies.map(c => (
+                    <span key={c.id} className="chip active">{c.name}</span>
+                  )) : <span className="subtext">-</span>}
                 </div>
               ) : (
-                <select
-                  className="form-control" value={formData.company_id}
-                  onChange={(e) => { setFormData({...formData, company_id: e.target.value, shift_id: ''}); resetShiftForm(); }}
-                >
-                  <option value="">Sélectionner une compagnie</option>
-                  {companyOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <div className="chip-list">
+                  {companies.map(c => (
+                    <button
+                      type="button"
+                      key={c.id}
+                      className={`chip ${(formData.company_ids || []).includes(c.id.toString()) ? 'active' : ''}`}
+                      onClick={() => toggleEmployeeCompany(c.id)}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
               )}
-              {roleLimitsCompanies && (
+              {roleLocksCompanies ? (
                 <span className="subtext">Définie par le rôle "{selectedRole.name}"</span>
-              )}
-              {roleAllowedCompanies.length > 1 && (
-                <span className="subtext">Limité aux compagnies autorisées par le rôle "{selectedRole.name}"</span>
+              ) : (
+                <span className="subtext">Sélectionnez une ou plusieurs compagnies</span>
               )}
             </div>
             <div className="form-group">
@@ -505,10 +496,10 @@ const EmployeesPage = () => {
             <select
               className="form-control" value={formData.shift_id}
               onChange={(e) => setFormData({...formData, shift_id: e.target.value})}
-              disabled={!formData.company_id || !formData.agency_id}
+              disabled={!(formData.company_ids || []).length || !formData.agency_id}
             >
               <option value="">
-                {(!formData.company_id || !formData.agency_id)
+                {(!(formData.company_ids || []).length || !formData.agency_id)
                   ? 'Sélectionnez une compagnie et une agence d\'abord'
                   : availableShifts.length === 0
                     ? 'Aucun shift configuré pour cette compagnie/agence'
@@ -518,10 +509,10 @@ const EmployeesPage = () => {
                 <option key={s.id} value={s.id}>{s.name} ({s.start_time} - {s.end_time})</option>
               ))}
             </select>
-            {formData.company_id && formData.agency_id && availableShifts.length === 0 && !canCreateShift && (
+            {(formData.company_ids || []).length > 0 && formData.agency_id && availableShifts.length === 0 && !canCreateShift && (
               <span className="subtext">Configurez un shift pour cette compagnie/agence dans "Shifts" pour pouvoir en assigner un ici.</span>
             )}
-            {canCreateShift && formData.company_id && formData.agency_id && availableShifts.length === 0 && !showShiftForm && (
+            {canCreateShift && (formData.company_ids || []).length > 0 && formData.agency_id && availableShifts.length === 0 && !showShiftForm && (
               <button type="button" className="btn-secondary" style={{marginTop: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px'}} onClick={() => setShowShiftForm(true)}>
                 <Plus size={14} />
                 <span>Créer un shift pour cette compagnie/agence</span>

@@ -21,7 +21,7 @@ const CalendarView = () => {
     if (selectedAgencyId && user.agency_id?.toString() !== selectedAgencyId) {
       return false;
     }
-    if (selectedCompanyId && user.company_id?.toString() !== selectedCompanyId) {
+    if (selectedCompanyId && !(user.companies || []).some(c => c.id.toString() === selectedCompanyId)) {
       return false;
     }
     return true;

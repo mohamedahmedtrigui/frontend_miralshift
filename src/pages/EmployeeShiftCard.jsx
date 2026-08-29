@@ -3,16 +3,20 @@ import { Clock } from 'lucide-react';
 import { companyBadgeText } from '../utils/companyLogo';
 
 const EmployeeShiftCard = ({ user, isOff }) => {
-  // Cards are themed after the employee's company color so the calendar
-  // reads by company at a glance; day-off cards are always red regardless
-  // of company, since that's a status, not a brand. The card itself stays
-  // white inside — only the border carries the company color — so the
-  // shift-color badge below isn't competing with a tinted background.
-  const companyColor = user.company?.color || '#3b82f6';
+  // Cards are themed after the employee's (first) company color so the
+  // calendar reads by company at a glance; an employee with several
+  // companies just anchors on the first one for this visual — day-off
+  // cards are always red regardless, since that's a status, not a brand.
+  // The card itself stays white inside — only the border carries the
+  // company color — so the shift-color badge below isn't competing with a
+  // tinted background.
+  const primaryCompany = (user.companies || [])[0];
+  const companyColor = primaryCompany?.color || '#3b82f6';
   const cardStyle = isOff ? undefined : {
     borderColor: companyColor,
     '--card-color': companyColor,
   };
+  const companyNames = (user.companies || []).map(c => c.name).join(', ');
 
   return (
     <div className={`shift-card ${isOff ? 'shift-off' : ''}`} style={cardStyle}>
@@ -21,11 +25,11 @@ const EmployeeShiftCard = ({ user, isOff }) => {
           <span className="user-name">{user.first_name} {user.last_name}</span>
           {user.agency?.name && <span className="user-agency">{user.agency.name}</span>}
         </div>
-        <div className="company-logo" title={user.company?.name}>
-          {user.company?.logo_url ? (
-            <img src={user.company.logo_url} alt={user.company.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+        <div className="company-logo" title={companyNames}>
+          {primaryCompany?.logo_url ? (
+            <img src={primaryCompany.logo_url} alt={primaryCompany.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
           ) : (
-            companyBadgeText(user.company)
+            companyBadgeText(primaryCompany)
           )}
         </div>
       </div>

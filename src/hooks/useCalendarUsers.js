@@ -32,10 +32,12 @@ export function useCalendarUsers() {
     const seen = new Set();
     const list = [];
     users.forEach(user => {
-      if (user.company && !seen.has(user.company.id)) {
-        seen.add(user.company.id);
-        list.push(user.company);
-      }
+      (user.companies || []).forEach(company => {
+        if (!seen.has(company.id)) {
+          seen.add(company.id);
+          list.push(company);
+        }
+      });
     });
     return list;
   }, [users]);
