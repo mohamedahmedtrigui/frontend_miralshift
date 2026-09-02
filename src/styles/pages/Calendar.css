@@ -289,7 +289,7 @@
 
 /* Day off is always red — it's a status, not a company brand. */
 .shift-off {
-  background-color: #fef2f2;
+  background-color: var(--danger-bg-soft);
   border-color: #ef4444;
 }
 .shift-off .user-name {

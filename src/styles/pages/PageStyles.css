@@ -142,7 +142,7 @@
   color: #ef4444;
 }
 .icon-btn.delete:hover {
-  background-color: #fef2f2;
+  background-color: var(--danger-bg-soft);
 }
 
 .icon-btn:disabled {
