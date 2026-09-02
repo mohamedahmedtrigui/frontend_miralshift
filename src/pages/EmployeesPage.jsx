@@ -419,7 +419,7 @@ const EmployeesPage = () => {
             </div>
           </div>
 
-          <div className="form-row-2col">
+          {/* <div className="form-row-2col">
             <div className="form-group">
               <label>Téléphone</label>
               <input
@@ -429,16 +429,16 @@ const EmployeesPage = () => {
                 autoComplete="off"
               />
             </div>
-            <div className="form-group">
-              <label>Rôle</label>
-              <select
-                className="form-control" value={formData.role_id}
-                onChange={(e) => handleRoleChange(e.target.value)}
-              >
-                <option value="">Aucun rôle / Aucun accès</option>
-                {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-              </select>
-            </div>
+          </div> */}
+          <div className="form-group">
+            <label>Rôle</label>
+            <select
+              className="form-control" value={formData.role_id}
+              onChange={(e) => handleRoleChange(e.target.value)}
+            >
+              <option value="">Aucun rôle / Aucun accès</option>
+              {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
           </div>
 
           <div className="form-row-2col">
@@ -592,7 +592,7 @@ const EmployeesPage = () => {
             </div>
           )}
 
-          <div className="form-row-2col">
+          {/* <div className="form-row-2col">
             <div className="form-group">
               <label>Date de début</label>
               <input
@@ -601,33 +601,33 @@ const EmployeesPage = () => {
                 onChange={(e) => setFormData({...formData, start_date: e.target.value})}
               />
             </div>
-            <div className="form-group">
-              <label>Zones de dispatch</label>
-              {roleLimitsZones ? (
-                <div className="chip-list read-only">
-                  {roleZones.map(z => (
-                    <span key={z.id} className="chip active">{z.name}</span>
-                  ))}
-                </div>
-              ) : (
-                <select
-                  multiple
-                  className="form-control multi-select"
-                  value={formData.dispatch_zones || []}
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions, opt => opt.value);
-                    setFormData({...formData, dispatch_zones: selected});
-                  }}
-                >
-                  {zones.map(z => <option key={z.id} value={z.name}>{z.name}</option>)}
-                </select>
-              )}
-              <span className="subtext">
-                {roleLimitsZones
-                  ? `Définies par le rôle "${selectedRole.name}"`
-                  : 'Ctrl/Cmd + clic pour sélectionner plusieurs zones'}
-              </span>
-            </div>
+          </div> */}
+          <div className="form-group">
+            <label>Zones de dispatch</label>
+            {roleLimitsZones ? (
+              <div className="chip-list read-only">
+                {roleZones.map(z => (
+                  <span key={z.id} className="chip active">{z.name}</span>
+                ))}
+              </div>
+            ) : (
+              <select
+                multiple
+                className="form-control multi-select"
+                value={formData.dispatch_zones || []}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions, opt => opt.value);
+                  setFormData({...formData, dispatch_zones: selected});
+                }}
+              >
+                {zones.map(z => <option key={z.id} value={z.name}>{z.name}</option>)}
+              </select>
+            )}
+            <span className="subtext">
+              {roleLimitsZones
+                ? `Définies par le rôle "${selectedRole.name}"`
+                : 'Ctrl/Cmd + clic pour sélectionner plusieurs zones'}
+            </span>
           </div>
 
           <div className="form-group">
