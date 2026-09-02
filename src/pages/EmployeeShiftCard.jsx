@@ -34,25 +34,25 @@ const EmployeeShiftCard = ({ user, isOff }) => {
         </div>
       </div>
       
-      {!isOff && (
-        <div className="shift-time">
-          {user.shift ? (
-            <span
-              className="shift-time-badge"
-              style={{ backgroundColor: user.shift.color || 'var(--accent-primary)' }}
-            >
-              {user.shift.name} · {user.shift.start_time} - {user.shift.end_time}
-            </span>
-          ) : (
-            <span className="shift-time-empty">
-              <Clock size={14} />
-              Aucun shift assigné
-            </span>
-          )}
-        </div>
-      )}
+      <div className="shift-time">
+        {user.shift ? (
+          <span
+            className="shift-time-badge"
+            style={{ backgroundColor: user.shift.color || 'var(--accent-primary)' }}
+          >
+            {user.shift.name} · {user.shift.start_time} - {user.shift.end_time}
+          </span>
+        ) : (
+          <span className="shift-time-empty">
+            <Clock size={14} />
+            Aucun shift assigné
+          </span>
+        )}
+      </div>
+      {/* Shown even when the employee has a shift, so a day off still
+          reads back which shift they'd normally be on. */}
       {isOff && (
-        <div className="shift-time off-text">
+        <div className="off-text">
           <span>Repos</span>
         </div>
       )}
