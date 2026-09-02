@@ -45,7 +45,7 @@ const CalendarView = () => {
         </div>
       </header>
 
-      {shifts.length > 0 && (
+      {/* {shifts.length > 0 && (
         <div className="shift-legend glass">
           {shifts.map(shift => (
             <div key={shift.id} className="shift-legend-item">
@@ -54,7 +54,7 @@ const CalendarView = () => {
             </div>
           ))}
         </div>
-      )}
+      )} */}
 
       <div className="header-actions">
         {companies.length > 0 && (

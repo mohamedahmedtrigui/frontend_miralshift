@@ -296,7 +296,7 @@ const EmployeesPage = () => {
             <thead>
               <tr>
                 <th>Nom</th>
-                <th>Nom d'utilisateur</th>
+                {/* <th>Nom d'utilisateur</th> */}
                 <th>Rôle</th>
                 <th>Compagnie</th>
                 <th>Agence</th>
@@ -314,7 +314,7 @@ const EmployeesPage = () => {
                       {user.phone && <div className="subtext">{user.phone}</div>}
                     </div>
                   </td>
-                  <td data-label="Nom d'utilisateur">{user.username || '-'}</td>
+                  {/* <td data-label="Nom d'utilisateur">{user.username || '-'}</td> */}
                   <td data-label="Rôle">
                     <span className="badge">{user.role?.name || 'Aucun rôle'}</span>
                   </td>
