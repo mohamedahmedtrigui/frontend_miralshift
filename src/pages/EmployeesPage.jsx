@@ -419,7 +419,7 @@ const EmployeesPage = () => {
             </div>
           </div>
 
-          {/* <div className="form-row-2col">
+          <div className="form-row-2col">
             <div className="form-group">
               <label>Téléphone</label>
               <input
@@ -429,7 +429,7 @@ const EmployeesPage = () => {
                 autoComplete="off"
               />
             </div>
-          </div> */}
+          </div>
           <div className="form-group">
             <label>Rôle</label>
             <select
