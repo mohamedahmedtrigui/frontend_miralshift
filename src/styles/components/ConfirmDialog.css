@@ -24,7 +24,7 @@
 }
 
 .confirm-icon.danger {
-  background-color: #fef2f2;
+  background-color: var(--danger-bg-soft);
   color: #ef4444;
 }
 

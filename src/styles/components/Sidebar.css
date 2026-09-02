@@ -184,7 +184,7 @@
 }
 
 .logout-btn:hover {
-  background-color: #fee2e2;
+  background-color: var(--danger-bg-soft);
   color: #ef4444;
 }
 

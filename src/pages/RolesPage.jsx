@@ -78,6 +78,10 @@ const RolesPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+    if (formData.access_level === 'restricted' && (formData.allowed_companies || []).length === 0) {
+      addToast('Sélectionnez au moins une compagnie pour un rôle à accès restreint', 'error');
+      return;
+    }
     setIsSubmitting(true);
     try {
       if (editingId) {
@@ -137,14 +141,12 @@ const RolesPage = () => {
     });
   };
 
-  // A role belongs to at most one company — clicking a chip replaces
-  // whatever was selected instead of adding to a list; clicking the already-
-  // selected one clears it back to "all companies".
-  const selectCompany = (companyId) => {
+  const toggleCompany = (companyId) => {
     setFormData(prev => {
       const id = companyId.toString();
-      const alreadySelected = (prev.allowed_companies || [])[0] === id;
-      return { ...prev, allowed_companies: alreadySelected ? [] : [id] };
+      const current = prev.allowed_companies || [];
+      const next = current.includes(id) ? current.filter(c => c !== id) : [...current, id];
+      return { ...prev, allowed_companies: next };
     });
   };
 
@@ -232,35 +234,35 @@ const RolesPage = () => {
             <tbody>
               {filteredRoles.map(role => (
                 <tr key={role.id}>
-                  <td>
+                  <td data-label="Nom du rôle">
                     <strong>{role.name}</strong>
                   </td>
-                  <td>{role.description || '-'}</td>
-                  <td>
+                  <td data-label="Description">{role.description || '-'}</td>
+                  <td data-label="Niveau d'accès">
                     <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
                       {getLevelIcon(role.access_level)}
                       {ACCESS_LEVEL_LABELS[role.access_level] || role.access_level}
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Zones autorisées">
                     {role.allowed_zones && role.allowed_zones.length > 0 ? role.allowed_zones.join(', ') : 'Toutes'}
                   </td>
-                  <td>
+                  <td data-label="Compagnie autorisée">
                     {role.allowed_companies && role.allowed_companies.length > 0 ? (
                       companies.filter(c => role.allowed_companies.includes(c.id.toString())).map(c => c.name).join(', ') || role.allowed_companies.join(', ')
                     ) : 'Toutes'}
                   </td>
-                  <td>
+                  <td data-label="Agence autorisée">
                     {role.allowed_agencies && role.allowed_agencies.length > 0 ? (
                       agencies.filter(a => role.allowed_agencies.includes(a.id.toString())).map(a => a.name).join(', ') || role.allowed_agencies.join(', ')
                     ) : 'Toutes'}
                   </td>
-                  <td>
+                  <td data-label="Interfaces">
                     {role.interface_access && role.interface_access.length > 0
                       ? role.interface_access.map(i => INTERFACE_LABELS[i] || i).join(', ')
                       : 'Toutes'}
                   </td>
-                  <td>
+                  <td data-label="Actions">
                     <div className="action-buttons">
                       {canUpdate && (
                         <button className="icon-btn edit" onClick={() => openModal(role)}><Edit2 size={16} /></button>
@@ -401,14 +403,14 @@ const RolesPage = () => {
                       <button
                         type="button"
                         key={c.id}
-                        className={`chip ${(formData.allowed_companies || [])[0] === c.id.toString() ? 'active' : ''}`}
-                        onClick={() => selectCompany(c.id)}
+                        className={`chip ${(formData.allowed_companies || []).includes(c.id.toString()) ? 'active' : ''}`}
+                        onClick={() => toggleCompany(c.id)}
                       >
                         {c.name}
                       </button>
                     ))}
                   </div>
-                  <span className="subtext">Un rôle est rattaché à une seule compagnie · aucune sélection = toutes.</span>
+                  <span className="subtext">Sélectionnez une ou plusieurs compagnies. Au moins une compagnie est requise.</span>
                 </div>
                 <div className="form-group">
                   <label>Agence autorisée</label>

@@ -1,5 +1,16 @@
 import axios from 'axios';
 
+// VITE_API_BASE_URL is baked in at build time — if it's missing, axios would
+// silently default requests to the current page's own origin instead of the
+// API, which looks like a working 200 response full of the wrong data
+// instead of an obvious failure. Fail loudly instead.
+if (!import.meta.env.VITE_API_BASE_URL) {
+  console.error(
+    'VITE_API_BASE_URL is not set — API requests will be sent to the wrong origin. ' +
+    'Set it in this deployment\'s environment variables and rebuild.'
+  );
+}
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: {

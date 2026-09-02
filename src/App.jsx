@@ -1,6 +1,7 @@
 import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import ThemeToggle from './components/ThemeToggle';
 import { useAuthStore } from './store/authStore';
 import { canAccessInterface } from './utils/permissions';
 import { ToastProvider } from './components/Toast';
@@ -56,6 +57,7 @@ function App() {
 
   return (
     <ToastProvider>
+      <ThemeToggle />
       <BrowserRouter>
         {!isAuthenticated ? (
           <Suspense fallback={<RouteFallback />}>

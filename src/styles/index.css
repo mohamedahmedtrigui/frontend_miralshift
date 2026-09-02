@@ -50,6 +50,53 @@
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+
+  --danger-bg-soft: #fef2f2;
+}
+
+/* Dark mode — toggled via data-theme on <html>, defaults to light when absent */
+[data-theme='dark'] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #273449;
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --accent-primary: #3b82f6;
+  --accent-hover: #60a5fa;
+
+  --border-light: #334155;
+  --border-focus: #3b82f6;
+
+  --shift-morning-bg: #172554;
+  --shift-morning-text: #93c5fd;
+  --shift-morning-border: #1e3a8a;
+
+  --shift-afternoon-bg: #431407;
+  --shift-afternoon-text: #fdba74;
+  --shift-afternoon-border: #7c2d12;
+
+  --shift-night-bg: #2e1065;
+  --shift-night-text: #c4b5fd;
+  --shift-night-border: #4c1d95;
+
+  --shift-off-bg: #1e293b;
+  --shift-off-text: #64748b;
+  --shift-off-border: #334155;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  --danger-bg-soft: #450a0a;
 }
 
 * {
@@ -64,14 +111,15 @@ body {
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Glassmorphism Utilities */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--glass-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--glass-border);
 }
 
 /* Layout Utilities */
@@ -99,6 +147,23 @@ body {
 @media (max-width: 767px) {
   .content-area {
     padding: var(--spacing-md);
+  }
+
+  /* On mobile, scroll the whole page instead of trapping scroll inside a
+     fixed-height nested box — feels natural with touch and lets every page
+     (calendar, employees, roles, companies, shifts) grow to fit its content. */
+  .app-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .main-content {
+    overflow: visible;
+  }
+
+  .content-area {
+    overflow-y: visible;
   }
 }
 

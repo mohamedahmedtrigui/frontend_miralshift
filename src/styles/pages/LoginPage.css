@@ -13,7 +13,11 @@
   padding: var(--spacing-xl);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  background-color: white;
+  background-color: var(--bg-secondary);
+}
+
+[data-theme='dark'] .login-container {
+  background-image: radial-gradient(circle at 10% 20%, var(--bg-tertiary) 0%, var(--bg-primary) 90%);
 }
 
 .login-header {
@@ -53,7 +57,7 @@
 }
 
 .error-message {
-  background-color: #fef2f2;
+  background-color: var(--danger-bg-soft);
   color: #ef4444;
   padding: var(--spacing-md);
   border-radius: var(--radius-md);

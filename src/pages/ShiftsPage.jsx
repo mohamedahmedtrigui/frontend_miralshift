@@ -24,7 +24,7 @@ const ShiftsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', company_id: '', agency_id: '', start_time: '', end_time: '', color: '#3b82f6'
+    name: '', company_ids: [], agency_id: '', start_time: '', end_time: '', color: '#3b82f6'
   });
 
   const openModal = (shift = null) => {
@@ -32,7 +32,7 @@ const ShiftsPage = () => {
       setEditingId(shift.id);
       setFormData({
         name: shift.name,
-        company_id: shift.company_id || '',
+        company_ids: shift.company_ids || [],
         agency_id: shift.agency_id || '',
         start_time: shift.start_time || '',
         end_time: shift.end_time || '',
@@ -40,16 +40,29 @@ const ShiftsPage = () => {
       });
     } else {
       setEditingId(null);
-      setFormData({ name: '', company_id: '', agency_id: '', start_time: '', end_time: '', color: '#3b82f6' });
+      setFormData({ name: '', company_ids: [], agency_id: '', start_time: '', end_time: '', color: '#3b82f6' });
     }
     setIsModalOpen(true);
   };
 
   const closeModal = () => setIsModalOpen(false);
 
+  const toggleCompany = (companyId) => {
+    setFormData(prev => {
+      const id = companyId.toString();
+      const current = prev.company_ids || [];
+      const next = current.includes(id) ? current.filter(c => c !== id) : [...current, id];
+      return { ...prev, company_ids: next };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+    if ((formData.company_ids || []).length === 0) {
+      addToast('Sélectionnez au moins une compagnie pour ce shift', 'error');
+      return;
+    }
     setIsSubmitting(true);
     try {
       if (editingId) {
@@ -124,7 +137,7 @@ const ShiftsPage = () => {
             <tbody>
               {shifts.map(shift => (
                 <tr key={shift.id}>
-                  <td>
+                  <td data-label="Nom">
                     <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                       <span
                         title={shift.color}
@@ -133,15 +146,19 @@ const ShiftsPage = () => {
                       <strong>{shift.name}</strong>
                     </div>
                   </td>
-                  <td>{shift.company?.name || '-'}</td>
-                  <td>{shift.agency?.name || '-'}</td>
-                  <td>
+                  <td data-label="Compagnie">
+                    {shift.companies && shift.companies.length > 0
+                      ? shift.companies.map(c => c.name).join(', ')
+                      : '-'}
+                  </td>
+                  <td data-label="Agence">{shift.agency?.name || '-'}</td>
+                  <td data-label="Horaires">
                     <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
                       <Clock size={14} />
                       <span>{shift.start_time} - {shift.end_time}</span>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Actions">
                     <div className="action-buttons">
                       {canUpdate && (
                         <button className="icon-btn edit" onClick={() => openModal(shift)}><Edit2 size={16} /></button>
@@ -192,14 +209,19 @@ const ShiftsPage = () => {
           <div className="form-row-2col">
             <div className="form-group">
               <label>Compagnie</label>
-              <select
-                className="form-control" value={formData.company_id}
-                onChange={(e) => setFormData({...formData, company_id: e.target.value})}
-                required
-              >
-                <option value="">Sélectionner une compagnie</option>
-                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <div className="chip-list">
+                {companies.map(c => (
+                  <button
+                    type="button"
+                    key={c.id}
+                    className={`chip ${(formData.company_ids || []).includes(c.id.toString()) ? 'active' : ''}`}
+                    onClick={() => toggleCompany(c.id)}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+              <span className="subtext">Sélectionnez une ou plusieurs compagnies (au moins une).</span>
             </div>
             <div className="form-group">
               <label>Agence</label>

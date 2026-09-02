@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as userService from '../services/userService';
+import * as shiftService from '../services/shiftService';
 import { useReferenceStore } from '../store/referenceStore';
 
 // /users is page-specific data (always refetched); roles/companies/agencies/
@@ -52,6 +53,16 @@ export function useEmployees() {
     await refetch();
   }, [refetch]);
 
+  // Lets the employee form spawn a shift on the fly (for a company/agency
+  // combo that has none yet) without navigating away to the Shifts page.
+  // fetchShifts(true) forces a refresh — the cache would otherwise keep
+  // serving the stale list that doesn't include the one just created.
+  const createShift = useCallback(async (data) => {
+    const shift = await shiftService.create(data);
+    await fetchShifts(true);
+    return shift;
+  }, [fetchShifts]);
+
   return {
     users,
     roles: roles || [],
@@ -65,5 +76,6 @@ export function useEmployees() {
     createUser,
     updateUser,
     deleteUser,
+    createShift,
   };
 }
