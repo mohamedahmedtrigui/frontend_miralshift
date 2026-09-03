@@ -39,9 +39,9 @@ const Sidebar = () => {
         <div className="sidebar-header">
           <div className="logo-container">
             <div className="logo-icon glass">
-              <img src="/miralshift-icon.png" alt="MiralShift Logo" />
+              <img src="/shiftplanner-icon.png" alt="ShiftPlanner Logo" />
             </div>
-            <h2>MiralShift</h2>
+            <h2>ShiftPlanner</h2>
           </div>
           {user && (
             <div className="user-info">

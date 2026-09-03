@@ -17,9 +17,9 @@ const LoginPage = () => {
       <div className="login-card glass">
         <div className="login-header">
           <div className="logo-icon glass">
-            <img src="/miralshift-icon.png" alt="MiralShift Logo" />
+            <img src="/shiftplanner-icon.png" alt="ShiftPlanner Logo" />
           </div>
-          <h2>Bienvenue sur MiralShift</h2>
+          <h2>Bienvenue sur ShiftPlanner</h2>
           <p>Connectez-vous pour accéder au planning des dispatchers</p>
         </div>
 
