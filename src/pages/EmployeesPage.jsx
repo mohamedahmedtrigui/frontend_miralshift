@@ -33,7 +33,7 @@ const EmployeesPage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', phone: '', username: '', password: '',
-    role_id: '', company_ids: [], agency_id: '', dispatch_zones: [], day_off: '',
+    role_ids: [], company_ids: [], agency_id: '', dispatch_zones: [], day_off: '',
     shift_id: '', start_date: ''
   });
 
@@ -56,7 +56,7 @@ const EmployeesPage = () => {
         phone: user.phone || '',
         username: user.username || '',
         password: '',
-        role_id: user.role_id || '',
+        role_ids: (user.roles || []).map(r => r.id.toString()),
         company_ids: user.company_ids || [],
         agency_id: user.agency_id || '',
         dispatch_zones: user.dispatch_zones || [],
@@ -68,7 +68,7 @@ const EmployeesPage = () => {
       setEditingId(null);
       setFormData({
         first_name: '', last_name: '', phone: '', username: '', password: '',
-        role_id: '', company_ids: [], agency_id: '', dispatch_zones: [], day_off: '',
+        role_ids: [], company_ids: [], agency_id: '', dispatch_zones: [], day_off: '',
         shift_id: '', start_date: ''
       });
     }
@@ -111,7 +111,6 @@ const EmployeesPage = () => {
 
     // Clean up empty strings to null for foreign keys
     const submitData = { ...formData };
-    if (!submitData.role_id) submitData.role_id = null;
     if (!submitData.agency_id) submitData.agency_id = null;
     if (!submitData.shift_id) submitData.shift_id = null;
 
@@ -155,26 +154,39 @@ const EmployeesPage = () => {
     }
   };
 
-  const selectedRole = useMemo(() => {
-    return roles.find(r => r.id == formData.role_id);
-  }, [formData.role_id, roles]);
+  const selectedRoles = useMemo(() => {
+    return roles.filter(r => (formData.role_ids || []).includes(r.id.toString()));
+  }, [formData.role_ids, roles]);
 
-  const showAuthFields = selectedRole && selectedRole.access_level !== 'none';
+  // Cumulating roles only ever widens access — full beats restricted beats
+  // none, same union rule as the backend's User::effectiveAccessLevel().
+  const effectiveAccessLevel = useMemo(() => {
+    if (selectedRoles.some(r => r.access_level === 'full')) return 'full';
+    if (selectedRoles.some(r => r.access_level === 'restricted')) return 'restricted';
+    return 'none';
+  }, [selectedRoles]);
 
-  // A restricted role carries its own companies/zones/agency directly — an
-  // employee under it belongs to ALL of the role's companies at once (a
-  // role can now allow several), so there's nothing left for the admin to
-  // pick; the field is always locked, same as Agency/Zones already are.
-  const roleLocksCompanies = selectedRole?.access_level === 'restricted';
-  const roleLimitsZones = selectedRole?.access_level === 'restricted' && selectedRole.allowed_zones?.length > 0;
-  const roleLimitsAgency = selectedRole?.access_level === 'restricted' && selectedRole.allowed_agencies?.length > 0;
+  const showAuthFields = effectiveAccessLevel !== 'none';
+
+  // A single restricted role still carries its own companies/zones/agency
+  // directly, same auto-lock behavior as before. As soon as 0 or several
+  // roles are selected there's no single scope to lock onto, so these
+  // fields become free-form again — the backend still enforces staying
+  // within the union of the selected roles' allowed scope.
+  const singleRestrictedRole = selectedRoles.length === 1 && selectedRoles[0].access_level === 'restricted'
+    ? selectedRoles[0]
+    : null;
+  const roleLocksCompanies = !!singleRestrictedRole;
+  const roleLimitsZones = !!singleRestrictedRole && singleRestrictedRole.allowed_zones?.length > 0;
+  const roleLimitsAgency = !!singleRestrictedRole && singleRestrictedRole.allowed_agencies?.length > 0;
+  const selectedRole = singleRestrictedRole;
 
   // This read-only display always reflects the employee's actual stored
   // values (formData), not the role's — the role only DRIVES formData (via
-  // handleRoleChange, on picking/switching a role). Deriving straight from
-  // the role instead would show the wrong thing whenever editing an existing
-  // employee whose companies/agency/zones no longer match a role that was
-  // edited after they were assigned.
+  // toggleEmployeeRole, on picking/switching to a single restricted role).
+  // Deriving straight from the role instead would show the wrong thing
+  // whenever editing an existing employee whose companies/agency/zones no
+  // longer match a role that was edited after they were assigned.
   const selectedCompanies = useMemo(() => {
     return companies.filter(c => (formData.company_ids || []).includes(c.id.toString()));
   }, [companies, formData.company_ids]);
@@ -187,22 +199,31 @@ const EmployeesPage = () => {
     return zones.filter(z => (formData.dispatch_zones || []).includes(z.name));
   }, [zones, formData.dispatch_zones]);
 
-  // Picking a restricted role adopts its companies/zones/agency directly
-  // instead of just narrowing choices — there's nothing left for the admin
-  // to pick.
-  const handleRoleChange = (roleId) => {
-    const role = roles.find(r => r.id.toString() === roleId);
+  // Free multi-select toggle for roles — cumulative, like companies. Picking
+  // a lone restricted role still adopts its companies/zones/agency directly
+  // (there's nothing left for the admin to pick in that case); as soon as
+  // the resulting selection isn't exactly one restricted role, these fields
+  // are left untouched and become free-form again.
+  const toggleEmployeeRole = (roleId) => {
+    const id = roleId.toString();
     setFormData(prev => {
-      const next = { ...prev, role_id: roleId };
-      if (role?.access_level === 'restricted') {
-        const allowedCompanies = role.allowed_companies || [];
+      const current = prev.role_ids || [];
+      const nextIds = current.includes(id) ? current.filter(r => r !== id) : [...current, id];
+      const next = { ...prev, role_ids: nextIds };
+
+      const nextSelectedRoles = roles.filter(r => nextIds.includes(r.id.toString()));
+      const singleRestricted = nextSelectedRoles.length === 1 && nextSelectedRoles[0].access_level === 'restricted'
+        ? nextSelectedRoles[0]
+        : null;
+      if (singleRestricted) {
+        const allowedCompanies = singleRestricted.allowed_companies || [];
         next.company_ids = [...allowedCompanies];
         next.shift_id = '';
-        if (role.allowed_zones?.length > 0) {
-          next.dispatch_zones = [...role.allowed_zones];
+        if (singleRestricted.allowed_zones?.length > 0) {
+          next.dispatch_zones = [...singleRestricted.allowed_zones];
         }
-        if (role.allowed_agencies?.length > 0) {
-          const roleAgencyId = role.allowed_agencies[0];
+        if (singleRestricted.allowed_agencies?.length > 0) {
+          const roleAgencyId = singleRestricted.allowed_agencies[0];
           if (roleAgencyId !== prev.agency_id?.toString()) {
             next.agency_id = roleAgencyId;
             next.shift_id = '';
@@ -316,7 +337,11 @@ const EmployeesPage = () => {
                   </td>
                   {/* <td data-label="Nom d'utilisateur">{user.username || '-'}</td> */}
                   <td data-label="Rôle">
-                    <span className="badge">{user.role?.name || 'Aucun rôle'}</span>
+                    {user.roles && user.roles.length > 0 ? (
+                      <div style={{display: 'flex', flexWrap: 'wrap', gap: '4px'}}>
+                        {user.roles.map(r => <span key={r.id} className="badge">{r.name}</span>)}
+                      </div>
+                    ) : <span className="badge">Aucun rôle</span>}
                   </td>
                   <td data-label="Compagnie">
                     {user.companies && user.companies.length > 0 ? (
@@ -343,13 +368,13 @@ const EmployeesPage = () => {
                   </td>
                   <td data-label="Actions">
                     <div className="action-buttons">
-                      {user.role?.access_level !== 'full' && canUpdate && (
+                      {!user.roles?.some(r => r.access_level === 'full') && canUpdate && (
                         <button className="icon-btn edit" onClick={() => openModal(user)}><Edit2 size={16} /></button>
                       )}
-                      {user.role?.access_level !== 'full' && canDelete && (
+                      {!user.roles?.some(r => r.access_level === 'full') && canDelete && (
                         <button className="icon-btn delete" onClick={() => requestDelete(user)}><Trash2 size={16} /></button>
                       )}
-                      {(user.role?.access_level === 'full' || (!canUpdate && !canDelete)) && '-'}
+                      {(user.roles?.some(r => r.access_level === 'full') || (!canUpdate && !canDelete)) && '-'}
                     </div>
                   </td>
                 </tr>
@@ -432,13 +457,19 @@ const EmployeesPage = () => {
           </div>
           <div className="form-group">
             <label>Rôle</label>
-            <select
-              className="form-control" value={formData.role_id}
-              onChange={(e) => handleRoleChange(e.target.value)}
-            >
-              <option value="">Aucun rôle / Aucun accès</option>
-              {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
+            <div className="chip-list">
+              {roles.map(r => (
+                <button
+                  type="button"
+                  key={r.id}
+                  className={`chip ${(formData.role_ids || []).includes(r.id.toString()) ? 'active' : ''}`}
+                  onClick={() => toggleEmployeeRole(r.id)}
+                >
+                  {r.name}
+                </button>
+              ))}
+            </div>
+            <span className="subtext">Sélectionnez un ou plusieurs rôles (aucun = aucun accès)</span>
           </div>
 
           <div className="form-row-2col">
