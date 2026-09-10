@@ -19,21 +19,28 @@ export function useEmployees() {
     setLoading(true);
     setError(null);
     try {
-      const [usersData] = await Promise.all([
-        userService.getAll(),
-        fetchRoles(),
-        fetchCompanies(),
-        fetchAgencies(),
-        fetchZones(),
-        fetchShifts(),
-      ]);
+      const usersData = await userService.getAll();
       setUsers(usersData);
     } catch (err) {
       console.error('Failed to fetch employees', err);
       setError(err);
-    } finally {
       setLoading(false);
+      return;
     }
+
+    // Roles/companies/agencies/zones/shifts only feed the add/edit modal's
+    // dropdowns, not the employee table itself. A restricted role that can
+    // manage users but lacks read access to e.g. roles or companies (a
+    // permission-matrix gap, not a bug) would otherwise 403 one of these and
+    // take down the whole page via Promise.all — settle them independently
+    // so a gap in one just leaves that dropdown empty instead.
+    const results = await Promise.allSettled([
+      fetchRoles(), fetchCompanies(), fetchAgencies(), fetchZones(), fetchShifts(),
+    ]);
+    results.forEach((r) => {
+      if (r.status === 'rejected') console.error('Failed to fetch reference data', r.reason);
+    });
+    setLoading(false);
   }, [fetchRoles, fetchCompanies, fetchAgencies, fetchZones, fetchShifts]);
 
   useEffect(() => { refetch(); }, [refetch]);
