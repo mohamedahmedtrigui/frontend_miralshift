@@ -12,19 +12,25 @@ export function useShifts() {
     setLoading(true);
     setError(null);
     try {
-      const [shiftsData] = await Promise.all([
-        shiftService.getAll(),
-        fetchCompanies(),
-        fetchAgencies(),
-      ]);
+      const shiftsData = await shiftService.getAll();
       setShifts(shiftsData);
       cacheShifts(shiftsData);
     } catch (err) {
       console.error('Failed to fetch shifts', err);
       setError(err);
-    } finally {
       setLoading(false);
+      return;
     }
+
+    // Companies/agencies only feed the add/edit modal's dropdowns, not the
+    // shifts table itself (which reads shift.companies, already embedded in
+    // each shift row) — settle them independently so a role lacking read
+    // access to one (a permission-matrix gap) doesn't take down the page.
+    const results = await Promise.allSettled([fetchCompanies(), fetchAgencies()]);
+    results.forEach((r) => {
+      if (r.status === 'rejected') console.error('Failed to fetch reference data', r.reason);
+    });
+    setLoading(false);
   }, [fetchCompanies, fetchAgencies, cacheShifts]);
 
   useEffect(() => { refetch(); }, [refetch]);

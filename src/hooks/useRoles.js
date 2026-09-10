@@ -12,20 +12,25 @@ export function useRoles() {
     setLoading(true);
     setError(null);
     try {
-      const [rolesData] = await Promise.all([
-        roleService.getAll(),
-        fetchCompanies(),
-        fetchZones(),
-        fetchAgencies(),
-      ]);
+      const rolesData = await roleService.getAll();
       setRoles(rolesData);
       cacheRoles(rolesData);
     } catch (err) {
       console.error('Failed to fetch roles', err);
       setError(err);
-    } finally {
       setLoading(false);
+      return;
     }
+
+    // Companies/zones/agencies only feed the add/edit modal's scope pickers,
+    // not the roles table itself — settle them independently so a role
+    // lacking read access to one (a permission-matrix gap) doesn't take
+    // down the page.
+    const results = await Promise.allSettled([fetchCompanies(), fetchZones(), fetchAgencies()]);
+    results.forEach((r) => {
+      if (r.status === 'rejected') console.error('Failed to fetch reference data', r.reason);
+    });
+    setLoading(false);
   }, [fetchCompanies, fetchZones, fetchAgencies, cacheRoles]);
 
   useEffect(() => { refetch(); }, [refetch]);
