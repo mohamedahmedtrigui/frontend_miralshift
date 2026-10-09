@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, Phone } from 'lucide-react';
 import { companyBadgeText } from '../utils/companyLogo';
 
 const EmployeeShiftCard = ({ user, isOff }) => {
@@ -24,6 +24,12 @@ const EmployeeShiftCard = ({ user, isOff }) => {
         <div className="shift-user-info">
           <span className="user-name">{user.first_name} {user.last_name}</span>
           {user.agency?.name && <span className="user-agency">{user.agency.name}</span>}
+          {user.phone && (
+            <a className="user-phone" href={`tel:${user.phone.replace(/\s+/g, '')}`}>
+              <Phone size={12} />
+              {user.phone}
+            </a>
+          )}
         </div>
         <div className="company-logo" title={companyNames}>
           {primaryCompany?.logo_url ? (
