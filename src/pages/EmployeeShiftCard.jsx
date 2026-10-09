@@ -25,7 +25,7 @@ const EmployeeShiftCard = ({ user, isOff }) => {
           <span className="user-name">{user.first_name} {user.last_name}</span>
           {user.agency?.name && <span className="user-agency">{user.agency.name}</span>}
           {user.phone && (
-            <a className="user-phone" href={`tel:${user.phone.replace(/\s+/g, '')}`}>
+            <a className="user-phone" >
               <Phone size={12} />
               {user.phone}
             </a>
